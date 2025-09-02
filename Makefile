@@ -16,18 +16,7 @@ YELLOW := \033[1;33m
 BLUE := \033[0;34m
 NC := \033[0m
 
-# Logging functions
-define log_info
-	@echo -e "$(BLUE)[INFO]$(NC) $(1)"
-endef
-
-define log_success
-	@echo -e "$(GREEN)[SUCCESS]$(NC) $(1)"
-endef
-
-define log_error
-	@echo -e "$(RED)[ERROR]$(NC) $(1)"
-endef
+# Simple logging (no complex functions)
 
 .PHONY: help build flash clean monitor erase check-deps
 
@@ -54,76 +43,76 @@ help:
 
 # Check dependencies
 check-deps:
-	$(call log_info,Checking dependencies...)
+	@printf "$(BLUE)[INFO]$(NC) Checking dependencies...\n"
 	@if [ ! -d "$(MICROPYTHON_DIR)" ]; then \
-		$(call log_error,MicroPython submodule not found. Run: git submodule update --init --recursive); \
+		printf "$(RED)[ERROR]$(NC) MicroPython submodule not found. Run: git submodule update --init --recursive\n"; \
 		exit 1; \
 	fi
 	@if [ ! -d "$(MICROPYTHON_DIR)/ports/esp32" ]; then \
-		$(call log_error,ESP32 port not found in MicroPython); \
+		printf "$(RED)[ERROR]$(NC) ESP32 port not found in MicroPython\n"; \
 		exit 1; \
 	fi
 	@if [ -z "$$IDF_PATH" ]; then \
-		$(call log_error,ESP-IDF not found. Please source ESP-IDF environment first:); \
-		$(call log_error,  source $$IDF_PATH/export.sh); \
+		printf "$(RED)[ERROR]$(NC) ESP-IDF not found. Please source ESP-IDF environment first:\n"; \
+		printf "$(RED)[ERROR]$(NC)   source $$IDF_PATH/export.sh\n"; \
 		exit 1; \
 	fi
-	$(call log_success,All dependencies found)
+	@printf "$(GREEN)[SUCCESS]$(NC) All dependencies found\n"
 
 # Build mpy-cross (required for some ports)
 build-mpy-cross:
-	$(call log_info,Building mpy-cross...)
+	@printf "$(BLUE)[INFO]$(NC) Building mpy-cross...\n"
 	@cd $(MICROPYTHON_DIR) && make -C mpy-cross
-	$(call log_success,mpy-cross built successfully)
+	@printf "$(GREEN)[SUCCESS]$(NC) mpy-cross built successfully\n"
 
 # Build firmware using make (faster than CMake)
 build: check-deps build-mpy-cross
-	$(call log_info,Building firmware for board: $(BOARD) variant: $(VARIANT))
+	@printf "$(BLUE)[INFO]$(NC) Building firmware for board: $(BOARD) variant: $(VARIANT)\n"
 	@mkdir -p $(BUILD_DIR)
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
 		export USER_C_MODULES=$(PROJECT_ROOT)/lvml && \
 		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml all
 	@cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)-$(VARIANT)/firmware.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin 2>/dev/null || \
 		cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)-$(VARIANT)/micropython.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin
-	$(call log_success,Firmware built: $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin)
+	@printf "$(GREEN)[SUCCESS]$(NC) Firmware built: $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin\n"
 
 # Flash firmware using esptool (faster than idf.py)
 flash: check-deps
-	$(call log_info,Flashing firmware to ESP32 on port $(PORT)...)
+	@printf "$(BLUE)[INFO]$(NC) Flashing firmware to ESP32 on port $(PORT)...\n"
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
 		export USER_C_MODULES=$(PROJECT_ROOT)/lvml && \
 		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml deploy PORT=$(PORT)
-	$(call log_success,Firmware flashed successfully)
+	@printf "$(GREEN)[SUCCESS]$(NC) Firmware flashed successfully\n"
 
 # Erase flash using esptool
 erase:
-	$(call log_info,Erasing ESP32 flash on port $(PORT)...)
+	@printf "$(BLUE)[INFO]$(NC) Erasing ESP32 flash on port $(PORT)...\n"
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
 		esptool.py --port $(PORT) erase_flash
-	$(call log_success,Flash erased successfully)
+	@printf "$(GREEN)[SUCCESS]$(NC) Flash erased successfully\n"
 
 # Monitor serial output
 monitor:
-	$(call log_info,Starting serial monitor on port $(PORT)...)
+	@printf "$(BLUE)[INFO]$(NC) Starting serial monitor on port $(PORT)...\n"
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
 		picocom $(PORT) -b 115200
 
 # Clean build directories
 clean:
-	$(call log_info,Cleaning build directories...)
+	@printf "$(BLUE)[INFO]$(NC) Cleaning build directories...\n"
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && make clean
 	@rm -rf $(BUILD_DIR)
-	$(call log_success,Build cleaned)
+	@printf "$(GREEN)[SUCCESS]$(NC) Build cleaned\n"
 
 # Full clean (including mpy-cross)
 fullclean: clean
-	$(call log_info,Full cleaning...)
+	@printf "$(BLUE)[INFO]$(NC) Full cleaning...\n"
 	@cd $(MICROPYTHON_DIR) && make -C mpy-cross clean
-	$(call log_success,Full clean completed)
+	@printf "$(GREEN)[SUCCESS]$(NC) Full clean completed\n"
 
 # Quick build and flash
 deploy: build flash
-	$(call log_success,Deploy completed!)
+	@printf "$(GREEN)[SUCCESS]$(NC) Deploy completed!\n"
 
 # Build and monitor
 build-monitor: build flash monitor
