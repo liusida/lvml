@@ -27,6 +27,12 @@ if [ "$1" = "cleanup" ]; then
         echo "Custom partition table removed"
     fi
     
+    # Remove copied manifest file
+    if [ -f "$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/manifest.py" ]; then
+        rm "$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/manifest.py"
+        echo "Custom manifest file removed"
+    fi
+    
     echo "Cleanup completed"
     exit 0
 fi
@@ -66,6 +72,14 @@ if [ -f "$PATCHES_DIR/sdkconfig.board" ]; then
     else
         echo "Warning: Board configuration file not found: $BOARD_CONFIG"
     fi
+fi
+
+# Copy custom manifest file
+if [ -f "$PATCHES_DIR/manifest.py" ]; then
+    echo "Copying custom manifest file..."
+    MANIFEST_FILE="$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/manifest.py"
+    cp "$PATCHES_DIR/manifest.py" "$MANIFEST_FILE"
+    echo "Manifest file copied successfully"
 fi
 
 echo "All patches and configurations applied successfully"
