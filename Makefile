@@ -4,6 +4,7 @@
 # Project configuration
 PROJECT_ROOT := $(shell pwd)
 MICROPYTHON_DIR := $(PROJECT_ROOT)/third-party/micropython
+LVGL_DIR := $(PROJECT_ROOT)/third-party/lvgl
 BUILD_DIR := $(PROJECT_ROOT)/build
 BOARD ?= ESP32_GENERIC_S3
 VARIANT ?= SPIRAM_OCT
@@ -18,7 +19,7 @@ NC := \033[0m
 
 # Simple logging (no complex functions)
 
-.PHONY: help build clean check-deps init-submodules build-mpy-cross
+.PHONY: help build clean check-deps init-submodules init-main-submodules build-mpy-cross
 
 # Default target
 help:
@@ -26,7 +27,8 @@ help:
 	@echo "  build         - Build firmware for specified board"
 	@echo "  clean         - Clean build directories"
 	@echo "  check-deps    - Check dependencies"
-	@echo "  init-submodules - Initialize MicroPython submodules"
+	@echo "  init-submodules - Initialize all submodules (MicroPython + LVGL)"
+	@echo "  init-main-submodules - Initialize main project submodules only"
 	@echo ""
 	@echo "Other targets (commented out for now):"
 	@echo "  # flash, erase, monitor, deploy, build-monitor, info"
@@ -62,9 +64,18 @@ check-deps:
 
 # Initialize submodules (required for some features)
 init-submodules:
+	@printf "$(BLUE)[INFO]$(NC) Initializing all submodules recursively...\n"
 	@printf "$(BLUE)[INFO]$(NC) Initializing MicroPython submodules...\n"
-	@cd $(MICROPYTHON_DIR)/ports/esp32 && make BOARD=$(BOARD) submodules
-	@printf "$(GREEN)[SUCCESS]$(NC) Submodules initialized\n"
+	@cd $(MICROPYTHON_DIR) && git submodule update --init --recursive
+	@printf "$(BLUE)[INFO]$(NC) Initializing LVGL submodules...\n"
+	@cd $(LVGL_DIR) && git submodule update --init --recursive
+	@printf "$(GREEN)[SUCCESS]$(NC) All submodules initialized\n"
+
+# Initialize main project submodules (MicroPython and LVGL)
+init-main-submodules:
+	@printf "$(BLUE)[INFO]$(NC) Initializing main project submodules...\n"
+	@git submodule update --init --recursive
+	@printf "$(GREEN)[SUCCESS]$(NC) Main project submodules initialized\n"
 
 # Build mpy-cross (required for some ports)
 build-mpy-cross:
