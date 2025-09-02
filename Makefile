@@ -5,7 +5,8 @@
 PROJECT_ROOT := $(shell pwd)
 MICROPYTHON_DIR := $(PROJECT_ROOT)/third-party/micropython
 BUILD_DIR := $(PROJECT_ROOT)/build
-BOARD ?= ESP32S3_BOX3
+BOARD ?= ESP32_GENERIC_S3
+VARIANT ?= SPIRAM_OCT
 PORT ?= /dev/ttyUSB0
 
 # Colors for output
@@ -41,11 +42,13 @@ help:
 	@echo "  check-deps - Check dependencies"
 	@echo ""
 	@echo "Variables:"
-	@echo "  BOARD      - Target board (default: ESP32S3_BOX3)"
+	@echo "  BOARD      - Target board (default: ESP32_GENERIC_S3)"
+	@echo "  VARIANT    - Board variant (default: SPIRAM_OCT)"
 	@echo "  PORT       - Serial port (default: /dev/ttyUSB0)"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make build"
+	@echo "  make BOARD=ESP32_GENERIC_S3 VARIANT=SPIRAM_OCT build"
 	@echo "  make BOARD=ESP32S3_BOX flash"
 	@echo "  make PORT=/dev/ttyACM0 monitor"
 
@@ -75,21 +78,21 @@ build-mpy-cross:
 
 # Build firmware using make (faster than CMake)
 build: check-deps build-mpy-cross
-	$(call log_info,Building firmware for board: $(BOARD))
+	$(call log_info,Building firmware for board: $(BOARD) variant: $(VARIANT))
 	@mkdir -p $(BUILD_DIR)
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
 		export USER_C_MODULES=$(PROJECT_ROOT)/lvml && \
-		make BOARD=$(BOARD) USER_C_MODULES=$(PROJECT_ROOT)/lvml
-	@cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/firmware.bin $(BUILD_DIR)/lvml-$(BOARD).bin 2>/dev/null || \
-		cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/micropython.bin $(BUILD_DIR)/lvml-$(BOARD).bin
-	$(call log_success,Firmware built: $(BUILD_DIR)/lvml-$(BOARD).bin)
+		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml all
+	@cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)-$(VARIANT)/firmware.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin 2>/dev/null || \
+		cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)-$(VARIANT)/micropython.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin
+	$(call log_success,Firmware built: $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin)
 
 # Flash firmware using esptool (faster than idf.py)
 flash: check-deps
 	$(call log_info,Flashing firmware to ESP32 on port $(PORT)...)
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
 		export USER_C_MODULES=$(PROJECT_ROOT)/lvml && \
-		make BOARD=$(BOARD) USER_C_MODULES=$(PROJECT_ROOT)/lvml deploy PORT=$(PORT)
+		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml deploy PORT=$(PORT)
 	$(call log_success,Firmware flashed successfully)
 
 # Erase flash using esptool
@@ -131,5 +134,6 @@ info:
 	@echo "MicroPython dir: $(MICROPYTHON_DIR)"
 	@echo "Build dir: $(BUILD_DIR)"
 	@echo "Target board: $(BOARD)"
+	@echo "Board variant: $(VARIANT)"
 	@echo "Serial port: $(PORT)"
 	@echo "ESP-IDF path: $$IDF_PATH"

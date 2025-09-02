@@ -41,10 +41,13 @@ The MicroPython and LVGL dependencies are included as submodules in the `third-p
 We use a Makefile-only build system for faster builds (no CMake overhead):
 
 ```bash
-# Build firmware
+# Build firmware (default: ESP32_GENERIC_S3 with SPIRAM_OCT)
 make build
 
-# Build for specific board
+# Build for specific board and variant
+make BOARD=ESP32_GENERIC_S3 VARIANT=SPIRAM_OCT build
+
+# Build for different board
 make BOARD=ESP32S3_BOX build
 
 # Flash to device
@@ -68,7 +71,7 @@ make help
 ```bash
 cd third-party/micropython/ports/esp32
 export USER_C_MODULES=/Users/star/Projects/lvml/lvml
-make BOARD=ESP32S3_BOX3 USER_C_MODULES=/Users/star/Projects/lvml/lvml
+make BOARD=ESP32_GENERIC_S3 VARIANT=SPIRAM_OCT USER_C_MODULES=/Users/star/Projects/lvml/lvml all
 ```
 
 ### Unix port (sanity check)
