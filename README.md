@@ -36,25 +36,46 @@ git submodule update --init --recursive
 
 The MicroPython and LVGL dependencies are included as submodules in the `third-party/` directory.
 
-### ESP-IDF (CMake) ports
+### Fast Build System (Makefile only)
 
-Example for ESP32-S3 (adjust board as needed):
+We use a Makefile-only build system for faster builds (no CMake overhead):
+
+```bash
+# Build firmware
+make build
+
+# Build for specific board
+make BOARD=ESP32S3_BOX build
+
+# Flash to device
+make flash
+
+# Build and flash in one command
+make deploy
+
+# Monitor serial output
+make monitor
+
+# Clean build
+make clean
+
+# Show help
+make help
+```
+
+### Manual Build (if needed)
 
 ```bash
 cd third-party/micropython/ports/esp32
-# If needed: source the ESP-IDF env first
-# . ./idf.sh
-
-idf.py -DUSER_C_MODULES=/Users/star/Projects/lvml/micropython.cmake -DMICROPY_BOARD=ESP32S3_BOX3 build
+export USER_C_MODULES=/Users/star/Projects/lvml/lvml
+make BOARD=ESP32S3_BOX3 USER_C_MODULES=/Users/star/Projects/lvml/lvml
 ```
-
-If your board name differs, list available boards under `ports/esp32/boards` and pick the closest (e.g. `ESP32S3_BOX`).
 
 ### Unix port (sanity check)
 
 ```bash
 make -C third-party/micropython/ports/unix \
-  USER_C_MODULES=/Users/star/Projects/lvml/micropython.cmake \
+  USER_C_MODULES=/Users/star/Projects/lvml/lvml \
   all
 third-party/micropython/ports/unix/build-standard/micropython -c "import lvml; lvml.hello()"
 ```
