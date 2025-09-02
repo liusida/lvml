@@ -18,18 +18,18 @@ NC := \033[0m
 
 # Simple logging (no complex functions)
 
-.PHONY: help build flash clean monitor erase check-deps init-submodules build-mpy-cross
+.PHONY: help build clean check-deps init-submodules build-mpy-cross
 
 # Default target
 help:
 	@echo "Available targets:"
 	@echo "  build         - Build firmware for specified board"
-	@echo "  flash         - Flash firmware to ESP32 device"
-	@echo "  erase         - Erase ESP32 flash memory"
-	@echo "  monitor       - Monitor serial output"
 	@echo "  clean         - Clean build directories"
 	@echo "  check-deps    - Check dependencies"
 	@echo "  init-submodules - Initialize MicroPython submodules"
+	@echo ""
+	@echo "Other targets (commented out for now):"
+	@echo "  # flash, erase, monitor, deploy, build-monitor, info"
 	@echo ""
 	@echo "Variables:"
 	@echo "  BOARD      - Target board (default: ESP32_GENERIC_S3)"
@@ -84,25 +84,25 @@ build: check-deps init-submodules build-mpy-cross
 	@printf "$(GREEN)[SUCCESS]$(NC) Firmware built: $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin\n"
 
 # Flash firmware using esptool (faster than idf.py)
-flash: check-deps
-	@printf "$(BLUE)[INFO]$(NC) Flashing firmware to ESP32 on port $(PORT)...\n"
-	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
-		export USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake && \
-		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake deploy PORT=$(PORT)
-	@printf "$(GREEN)[SUCCESS]$(NC) Firmware flashed successfully\n"
+# flash: check-deps
+# 	@printf "$(BLUE)[INFO]$(NC) Flashing firmware to ESP32 on port $(PORT)...\n"
+# 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
+# 		export USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake && \
+# 		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake deploy PORT=$(PORT)
+# 	@printf "$(GREEN)[SUCCESS]$(NC) Firmware flashed successfully\n"
 
 # Erase flash using esptool
-erase:
-	@printf "$(BLUE)[INFO]$(NC) Erasing ESP32 flash on port $(PORT)...\n"
-	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
-		esptool.py --port $(PORT) erase_flash
-	@printf "$(GREEN)[SUCCESS]$(NC) Flash erased successfully\n"
+# erase:
+# 	@printf "$(BLUE)[INFO]$(NC) Erasing ESP32 flash on port $(PORT)...\n"
+# 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
+# 		esptool.py --port $(PORT) erase_flash
+# 	@printf "$(GREEN)[SUCCESS]$(NC) Flash erased successfully\n"
 
 # Monitor serial output
-monitor:
-	@printf "$(BLUE)[INFO]$(NC) Starting serial monitor on port $(PORT)...\n"
-	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
-		picocom $(PORT) -b 115200
+# monitor:
+# 	@printf "$(BLUE)[INFO]$(NC) Starting serial monitor on port $(PORT)...\n"
+# 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
+# 		picocom $(PORT) -b 115200
 
 # Clean build directories
 clean:
@@ -112,24 +112,23 @@ clean:
 	@printf "$(GREEN)[SUCCESS]$(NC) Build cleaned\n"
 
 # Full clean (including mpy-cross)
-fullclean: clean
-	@printf "$(BLUE)[INFO]$(NC) Full cleaning...\n"
-	@cd $(MICROPYTHON_DIR) && make -C mpy-cross clean
-	@printf "$(GREEN)[SUCCESS]$(NC) Full clean completed\n"
+# fullclean: clean
+# 	@printf "$(BLUE)[INFO]$(NC) Full cleaning...\n"
+# 	@cd $(MICROPYTHON_DIR) && make -C mpy-cross clean
+# 	@printf "$(GREEN)[SUCCESS]$(NC) Full clean completed\n"
 
 # Quick build and flash
-deploy: build flash
-	@printf "$(GREEN)[SUCCESS]$(NC) Deploy completed!\n"
+# deploy: build flash
+# 	@printf "$(GREEN)[SUCCESS]$(NC) Deploy completed!\n"
 
 # Build and monitor
-build-monitor: build flash monitor
-
+# build-monitor: build flash monitor
 # Show build info
-info:
-	@echo "Project root: $(PROJECT_ROOT)"
-	@echo "MicroPython dir: $(MICROPYTHON_DIR)"
-	@echo "Build dir: $(BUILD_DIR)"
-	@echo "Target board: $(BOARD)"
-	@echo "Board variant: $(VARIANT)"
-	@echo "Serial port: $(PORT)"
-	@echo "ESP-IDF path: $$IDF_PATH"
+# info:
+# 	@echo "Project root: $(PROJECT_ROOT)"
+# 	@echo "MicroPython dir: $(MICROPYTHON_DIR)"
+# 	@echo "Build dir: $(BUILD_DIR)"
+# 	@echo "Target board: $(BOARD)"
+# 	@echo "Board variant: $(VARIANT)"
+# 	@echo "Serial port: $(PORT)"
+# 	@echo "ESP-IDF path: $$IDF_PATH"
