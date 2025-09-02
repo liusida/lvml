@@ -4,6 +4,9 @@
 #include "py/runtime.h"
 #include "py/mphal.h"
 
+// ESP-IDF includes for PSRAM
+#include "esp_heap_caps.h"
+
 // LVGL includes
 #include "lvgl.h"
 
@@ -29,8 +32,16 @@ static mp_obj_t lvml_init(void) {
     
     // Set up display buffer (you may need to adjust this for your hardware)
     #define BUF_ROWS 120
-    static lv_color_t buf1[320 * BUF_ROWS]; // Primary buffer
-    static lv_color_t buf2[320 * BUF_ROWS]; // Secondary buffer
+    // Allocate buffers in PSRAM instead of internal RAM
+    lv_color_t *buf1 = (lv_color_t*)heap_caps_malloc(320 * BUF_ROWS * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
+    lv_color_t *buf2 = (lv_color_t*)heap_caps_malloc(320 * BUF_ROWS * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
+    
+    if (buf1 == NULL || buf2 == NULL) {
+        mp_printf(&mp_plat_print, "ERROR: Failed to allocate display buffers in PSRAM!\n");
+        if (buf1) heap_caps_free(buf1);
+        if (buf2) heap_caps_free(buf2);
+        return mp_const_none;
+    }
     
     // Create display (you'll need to implement flush callback for your hardware)
     lv_display_t *disp = lv_display_create(320, 240);

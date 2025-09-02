@@ -8,8 +8,15 @@ def initialize_system():
     """Run initialization before user code"""
     print("=== Initializing System ===")
     
-    # Your initialization code here
-    lvml.hello()  # Test the module
+    # Initialize LVGL
+    if not lvml.is_initialized():
+        lvml.init()
+        lvml.set_dark_bg()  # Set dark background
+    else:
+        print("LVGL already initialized")
+    
+    # Test the module
+    lvml.hello()
     
     # Add any other initialization:
     # - Set up hardware pins

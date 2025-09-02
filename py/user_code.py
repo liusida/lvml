@@ -10,8 +10,11 @@ lvml.hello()
 # Customer's code here
 print("Customer code running...")
 
-# Example: You could add LVGL initialization here
-# lvgl.init()
-# lvgl.create_ui()
+# LVGL is already initialized by main.py with dark background
+# You can now create UI elements, labels, buttons, etc.
+# Example:
+# import lvgl
+# label = lvgl.label_create(lvgl.screen_active())
+# lvgl.label_set_text(label, "Hello from customer code!")
 
 print("Customer code complete.")

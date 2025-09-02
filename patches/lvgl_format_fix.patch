@@ -1,0 +1,11 @@
+--- a/src/others/xml/lv_xml_component.c
++++ b/src/others/xml/lv_xml_component.c
+@@ -207,7 +207,7 @@ lv_result_t lv_xml_component_register_from_file(const char * path)
+     /* Create the buffer */
+     char * xml_buf = lv_malloc(file_size + 1);
+     if(xml_buf == NULL) {
+-        LV_LOG_WARN("Memory allocation failed for file %s (%d bytes)", path, file_size + 1);
++        LV_LOG_WARN("Memory allocation failed for file %s (%zu bytes)", path, (size_t)(file_size + 1));
+         lv_free(filename);
+         lv_fs_close(&f);
+         return LV_RESULT_INVALID;

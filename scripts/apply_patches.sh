@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# Script to apply patches to submodules before building
+# Usage: ./scripts/apply_patches.sh [cleanup]
+#   - Without arguments: applies patches and configs
+#   - With 'cleanup': restores original configurations
+
+set -e
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PATCHES_DIR="$PROJECT_ROOT/patches"
+
+# Check if cleanup was requested
+if [ "$1" = "cleanup" ]; then
+    echo "Cleaning up patches and configurations..."
+    
+    # Restore original board configuration
+    BOARD_CONFIG="$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/sdkconfig.board"
+    if [ -f "$BOARD_CONFIG.backup" ]; then
+        mv "$BOARD_CONFIG.backup" "$BOARD_CONFIG"
+        echo "Board configuration restored"
+    fi
+    
+    # Remove copied partition table
+    if [ -f "$PROJECT_ROOT/third-party/micropython/ports/esp32/partitions-16MiB-large-app.csv" ]; then
+        rm "$PROJECT_ROOT/third-party/micropython/ports/esp32/partitions-16MiB-large-app.csv"
+        echo "Custom partition table removed"
+    fi
+    
+    echo "Cleanup completed"
+    exit 0
+fi
+
+echo "Applying patches to submodules..."
+
+# Apply LVGL format fix patch
+if [ -f "$PATCHES_DIR/lvgl_format_fix.patch" ]; then
+    echo "Applying LVGL format fix patch..."
+    cd "$PROJECT_ROOT/third-party/lvgl"
+    if git apply --check "$PATCHES_DIR/lvgl_format_fix.patch" 2>/dev/null; then
+        git apply "$PATCHES_DIR/lvgl_format_fix.patch"
+        echo "LVGL format fix patch applied successfully"
+    else
+        echo "LVGL format fix patch already applied or incompatible"
+    fi
+    cd "$PROJECT_ROOT"
+fi
+
+# Copy custom partition table to MicroPython directory
+if [ -f "$PATCHES_DIR/partitions-16MiB-large-app.csv" ]; then
+    echo "Copying custom partition table..."
+    cp "$PATCHES_DIR/partitions-16MiB-large-app.csv" "$PROJECT_ROOT/third-party/micropython/ports/esp32/"
+    echo "Custom partition table copied successfully"
+fi
+
+# Copy custom board configuration
+if [ -f "$PATCHES_DIR/sdkconfig.board" ]; then
+    echo "Copying custom board configuration..."
+    BOARD_CONFIG="$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/sdkconfig.board"
+    if [ -f "$BOARD_CONFIG" ]; then
+        # Create backup
+        cp "$BOARD_CONFIG" "$BOARD_CONFIG.backup"
+        # Copy custom config
+        cp "$PATCHES_DIR/sdkconfig.board" "$BOARD_CONFIG"
+        echo "Board configuration copied successfully"
+    else
+        echo "Warning: Board configuration file not found: $BOARD_CONFIG"
+    fi
+fi
+
+echo "All patches and configurations applied successfully"

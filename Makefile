@@ -19,13 +19,15 @@ NC := \033[0m
 
 # Simple logging (no complex functions)
 
-.PHONY: help build clean check-deps init-submodules init-main-submodules build-mpy-cross
+.PHONY: help build clean clean-all check-deps init-submodules init-main-submodules build-mpy-cross apply-patches
 
 # Default target
 help:
 	@echo "Available targets:"
 	@echo "  build         - Build firmware for specified board"
 	@echo "  clean         - Clean build directories"
+	@echo "  clean-all     - Clean all build directories (more thorough)"
+	@echo "  apply-patches - Apply patches and configuration changes"
 	@echo "  check-deps    - Check dependencies"
 	@echo "  init-submodules - Initialize all submodules (MicroPython + LVGL)"
 	@echo "  init-main-submodules - Initialize main project submodules only"
@@ -77,6 +79,12 @@ init-main-submodules:
 	@git submodule update --init --recursive
 	@printf "$(GREEN)[SUCCESS]$(NC) Main project submodules initialized\n"
 
+# Apply patches and configuration changes
+apply-patches:
+	@printf "$(BLUE)[INFO]$(NC) Applying patches and configuration changes...\n"
+	@./scripts/apply_patches.sh
+	@printf "$(GREEN)[SUCCESS]$(NC) Patches applied successfully\n"
+
 # Build mpy-cross (required for some ports)
 build-mpy-cross:
 	@printf "$(BLUE)[INFO]$(NC) Building mpy-cross...\n"
@@ -84,14 +92,14 @@ build-mpy-cross:
 	@printf "$(GREEN)[SUCCESS]$(NC) mpy-cross built successfully\n"
 
 # Build firmware using make (faster than CMake)
-build: check-deps init-submodules build-mpy-cross
+build: check-deps init-submodules apply-patches build-mpy-cross
 	@printf "$(BLUE)[INFO]$(NC) Building firmware for board: $(BOARD) variant: $(VARIANT)\n"
 	@mkdir -p $(BUILD_DIR)
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
 		export USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake && \
 		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake all
-	@cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)-$(VARIANT)/firmware.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin 2>/dev/null || \
-		cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)-$(VARIANT)/micropython.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin
+	@cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/firmware.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin 2>/dev/null || \
+		cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/micropython.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin
 	@printf "$(GREEN)[SUCCESS]$(NC) Firmware built: $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin\n"
 
 # Flash firmware using esptool (faster than idf.py)
@@ -120,7 +128,17 @@ clean:
 	@printf "$(BLUE)[INFO]$(NC) Cleaning build directories...\n"
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && make clean
 	@rm -rf $(BUILD_DIR)
+	@rm -rf $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)
+	@rm -rf $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)-$(VARIANT)
 	@printf "$(GREEN)[SUCCESS]$(NC) Build cleaned\n"
+
+# Clean all build directories (more thorough)
+clean-all:
+	@printf "$(BLUE)[INFO]$(NC) Cleaning all build directories...\n"
+	@cd $(MICROPYTHON_DIR)/ports/esp32 && make clean
+	@rm -rf $(BUILD_DIR)
+	@rm -rf $(MICROPYTHON_DIR)/ports/esp32/build-*
+	@printf "$(GREEN)[SUCCESS]$(NC) All builds cleaned\n"
 
 # Full clean (including mpy-cross)
 # fullclean: clean
