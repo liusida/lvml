@@ -70,15 +70,15 @@ make help
 
 ```bash
 cd third-party/micropython/ports/esp32
-export USER_C_MODULES=/Users/star/Projects/lvml/lvml
-make BOARD=ESP32_GENERIC_S3 VARIANT=SPIRAM_OCT USER_C_MODULES=/Users/star/Projects/lvml/lvml all
+export USER_C_MODULES=/Users/star/Projects/lvml/lvml/micropython.cmake
+make BOARD=ESP32_GENERIC_S3 VARIANT=SPIRAM_OCT USER_C_MODULES=/Users/star/Projects/lvml/lvml/micropython.cmake all
 ```
 
 ### Unix port (sanity check)
 
 ```bash
 make -C third-party/micropython/ports/unix \
-  USER_C_MODULES=/Users/star/Projects/lvml/lvml \
+  USER_C_MODULES=/Users/star/Projects/lvml/lvml/micropython.cmake \
   all
 third-party/micropython/ports/unix/build-standard/micropython -c "import lvml; lvml.hello()"
 ```

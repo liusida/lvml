@@ -18,17 +18,18 @@ NC := \033[0m
 
 # Simple logging (no complex functions)
 
-.PHONY: help build flash clean monitor erase check-deps
+.PHONY: help build flash clean monitor erase check-deps init-submodules build-mpy-cross
 
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  build      - Build firmware for specified board"
-	@echo "  flash      - Flash firmware to ESP32 device"
-	@echo "  erase      - Erase ESP32 flash memory"
-	@echo "  monitor    - Monitor serial output"
-	@echo "  clean      - Clean build directories"
-	@echo "  check-deps - Check dependencies"
+	@echo "  build         - Build firmware for specified board"
+	@echo "  flash         - Flash firmware to ESP32 device"
+	@echo "  erase         - Erase ESP32 flash memory"
+	@echo "  monitor       - Monitor serial output"
+	@echo "  clean         - Clean build directories"
+	@echo "  check-deps    - Check dependencies"
+	@echo "  init-submodules - Initialize MicroPython submodules"
 	@echo ""
 	@echo "Variables:"
 	@echo "  BOARD      - Target board (default: ESP32_GENERIC_S3)"
@@ -59,6 +60,12 @@ check-deps:
 	fi
 	@printf "$(GREEN)[SUCCESS]$(NC) All dependencies found\n"
 
+# Initialize submodules (required for some features)
+init-submodules:
+	@printf "$(BLUE)[INFO]$(NC) Initializing MicroPython submodules...\n"
+	@cd $(MICROPYTHON_DIR)/ports/esp32 && make BOARD=$(BOARD) submodules
+	@printf "$(GREEN)[SUCCESS]$(NC) Submodules initialized\n"
+
 # Build mpy-cross (required for some ports)
 build-mpy-cross:
 	@printf "$(BLUE)[INFO]$(NC) Building mpy-cross...\n"
@@ -66,12 +73,12 @@ build-mpy-cross:
 	@printf "$(GREEN)[SUCCESS]$(NC) mpy-cross built successfully\n"
 
 # Build firmware using make (faster than CMake)
-build: check-deps build-mpy-cross
+build: check-deps init-submodules build-mpy-cross
 	@printf "$(BLUE)[INFO]$(NC) Building firmware for board: $(BOARD) variant: $(VARIANT)\n"
 	@mkdir -p $(BUILD_DIR)
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
-		export USER_C_MODULES=$(PROJECT_ROOT)/lvml && \
-		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml all
+		export USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake && \
+		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake all
 	@cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)-$(VARIANT)/firmware.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin 2>/dev/null || \
 		cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)-$(VARIANT)/micropython.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin
 	@printf "$(GREEN)[SUCCESS]$(NC) Firmware built: $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin\n"
@@ -80,8 +87,8 @@ build: check-deps build-mpy-cross
 flash: check-deps
 	@printf "$(BLUE)[INFO]$(NC) Flashing firmware to ESP32 on port $(PORT)...\n"
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
-		export USER_C_MODULES=$(PROJECT_ROOT)/lvml && \
-		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml deploy PORT=$(PORT)
+		export USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake && \
+		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake deploy PORT=$(PORT)
 	@printf "$(GREEN)[SUCCESS]$(NC) Firmware flashed successfully\n"
 
 # Erase flash using esptool
