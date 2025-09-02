@@ -12,6 +12,10 @@ Minimal MicroPython user C module named `lvml` exposing a single function `lvml.
 - `third-party/`
   - `micropython/`: MicroPython v1.24-release (submodule)
   - `lvgl/`: LVGL v9.3.0 (submodule) - includes XML support
+- `py/`
+  - `main.py`: Example main.py for ESP32 boot initialization
+  - `user_main.py`: Example customer application
+  - `user_code.py`: Alternative customer code format
 
 ## Setup
 
@@ -67,3 +71,32 @@ Expected output:
 ```
 hello from lvml
 ```
+
+## ESP32 Boot Initialization
+
+The `py/` directory contains example Python files for ESP32 boot initialization:
+
+### Upload Files to ESP32
+
+1. **Upload main.py** (required):
+```bash
+ampy --port /dev/ttyUSB0 put py/main.py
+```
+
+2. **Upload customer code** (choose one):
+```bash
+# Option A: user_main.py (recommended)
+ampy --port /dev/ttyUSB0 put py/user_main.py
+
+# Option B: user_code.py (direct execution)
+ampy --port /dev/ttyUSB0 put py/user_code.py
+```
+
+### Boot Sequence
+
+1. ESP32 boots → `main.py` runs automatically
+2. System initialization happens first
+3. Customer code executes after initialization
+4. Ready for operation
+
+See `py/README.md` for detailed usage instructions.
