@@ -1,0 +1,9 @@
+[submodule "micropython"]
+	path = micropython
+	url = https://github.com/micropython/micropython.git
+[submodule "third-party/micropython"]
+	path = third-party/micropython
+	url = https://github.com/micropython/micropython.git
+[submodule "third-party/lvgl"]
+	path = third-party/lvgl
+	url = https://github.com/lvgl/lvgl.git
