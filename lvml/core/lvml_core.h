@@ -59,10 +59,8 @@ typedef enum {
  */
 lvml_error_t lvml_core_init(void);
 
-/**
- * Deinitialize LVML core system
- */
-void lvml_core_deinit(void);
+// Unified initializer performs full display and memory setup
+// (previously lvml_core_init_with_display)
 
 /**
  * Check if LVML core is initialized
@@ -77,10 +75,32 @@ bool lvml_core_is_initialized(void);
 const char* lvml_core_get_version(void);
 
 /**
- * Set custom delay function for LVGL
- * @param delay_cb delay callback function
+ * Print detailed memory information
+ * @return LVML_OK on success, error code on failure
  */
-void lvml_core_set_delay_callback(void (*delay_cb)(uint32_t ms));
+lvml_error_t lvml_core_print_memory_info(void);
+
+/**
+ * Set display rotation
+ * @param rotation rotation value (0, 1, 2, 3 for 0°, 90°, 180°, 270°)
+ * @return LVML_OK on success, error code on failure
+ */
+lvml_error_t lvml_core_set_rotation(int rotation);
+
+/**
+ * Deinitialize LVML core system
+ * @return LVML_OK on success, error code on failure
+ */
+lvml_error_t lvml_core_deinit(void);
+
+/**
+ * Process LVGL tick and timer handler
+ * @return LVML_OK on success, error code on failure
+ */
+lvml_error_t lvml_core_tick(void);
+
+// UI management functions
+#include "lvml_ui.h"
 
 #ifdef __cplusplus
 } /*extern "C"*/

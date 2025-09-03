@@ -224,31 +224,57 @@ esp_err_t esp32_s3_box3_lcd_set_rotation(lv_display_rotation_t rotation) {
     
     uint8_t madctl_value = 0;
     
-    // Set MADCTL register value based on rotation
+    // With LV_COLOR_16_SWAP 1 + BGR order:
+    // Set MADCTL register value based on rotation using TFT_eSPI values
+    // MADCTL bit definitions (from TFT_eSPI ILI9341_Defines.h):
+    // MY (bit 7): Row Address Order (0x80)
+    // MX (bit 6): Column Address Order (0x40)
+    // MV (bit 5): Row/Column Exchange (0x20)
+    // ML (bit 4): Vertical Refresh Order (0x10)
+    // BGR (bit 3): Color Order (0x08 = BGR, 0x00 = RGB)
+    // MH (bit 2): Horizontal Refresh Order (0x04)
     switch (rotation) {
         case LV_DISPLAY_ROTATION_0:
-            madctl_value = 0x00; // Normal orientation
+            madctl_value = 0x80 | 0x20 | 0x08; // MY=1, MV=1, BGR order (TFT_eSPI case 0 M5STACK with BGR)
             break;
         case LV_DISPLAY_ROTATION_90:
-            madctl_value = 0x60; // 90° clockwise (MY=1, MX=1, MV=1)
+            madctl_value = 0x08; // BGR order (TFT_eSPI case 1 M5STACK with BGR)
             break;
         case LV_DISPLAY_ROTATION_180:
-            madctl_value = 0xC0; // 180° (MY=1, MX=1)
+            madctl_value = 0x20 | 0x40 | 0x08; // MV=1, MX=1, BGR order (TFT_eSPI case 2 M5STACK with BGR)
             break;
         case LV_DISPLAY_ROTATION_270:
-            madctl_value = 0xA0; // 270° clockwise (MX=1, MV=1)
+            madctl_value = 0x40 | 0x80 | 0x08; // MX=1, MY=1, BGR order (TFT_eSPI case 3 M5STACK with BGR)
             break;
         default:
-            madctl_value = 0x00;
+            madctl_value = 0x80 | 0x20 | 0x08; // Default to 0° rotation
             break;
     }
     
     // Send MADCTL command (0x36) with rotation value
-    uint8_t madctl_cmd[] = {0x36};
-    ili9341_send_cmd_cb(NULL, madctl_cmd, 1, &madctl_value, 1);
+    mp_printf(&mp_plat_print, "Sending MADCTL command 0x36 with value 0x%02X...\n", madctl_value);
+    ili9341_send_cmd(0x36);  // MADCTL command
+    ili9341_send_data(&madctl_value, 1);  // Send the rotation value
     
     mp_printf(&mp_plat_print, "Display rotation set to %d degrees (MADCTL=0x%02X)\n", 
               rotation * 90, madctl_value);
+    
+    return ESP_OK;
+}
+
+// Test function to try different MADCTL values
+esp_err_t esp32_s3_box3_lcd_test_rotation(uint8_t madctl_value) {
+    if (!lcd_initialized || spi_device == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    
+    mp_printf(&mp_plat_print, "Testing MADCTL value 0x%02X...\n", madctl_value);
+    
+    // Send MADCTL command (0x36) with test value
+    ili9341_send_cmd(0x36);  // MADCTL command
+    ili9341_send_data(&madctl_value, 1);  // Send the test value
+    
+    mp_printf(&mp_plat_print, "MADCTL test value 0x%02X sent\n", madctl_value);
     
     return ESP_OK;
 }
@@ -329,6 +355,14 @@ lv_display_t * esp32_s3_box3_lcd_create_display(uint32_t width, uint32_t height)
     }
     
     mp_printf(&mp_plat_print, "ESP32-S3-Box-3 LCD display created successfully!\n");
+    
+    // Set default rotation after display is created
+    mp_printf(&mp_plat_print, "Setting default display rotation to 180 degrees...\n");
+    esp_err_t rot_ret = esp32_s3_box3_lcd_set_rotation(LV_DISPLAY_ROTATION_270);
+    if (rot_ret != ESP_OK) {
+        mp_printf(&mp_plat_print, "WARNING: Failed to set default rotation, ret=%d\n", rot_ret);
+        // Don't fail display creation for rotation issues
+    }
     
     return disp;
 }

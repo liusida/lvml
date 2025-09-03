@@ -8,6 +8,7 @@
 
 // Core LVML functionality
 #include "core/lvml_core.h"
+#include "core/lvml_ui.h"
 
 // XML parsing and processing
 #include "xml/xml_parser.h"
