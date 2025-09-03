@@ -21,6 +21,13 @@ if [ "$1" = "cleanup" ]; then
         echo "Board configuration restored"
     fi
     
+    # Restore original mpconfigboard.h
+    BOARD_HEADER="$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/mpconfigboard.h"
+    if [ -f "$BOARD_HEADER.backup" ]; then
+        mv "$BOARD_HEADER.backup" "$BOARD_HEADER"
+        echo "Board header file restored"
+    fi
+    
     # Remove copied partition table
     if [ -f "$PROJECT_ROOT/third-party/micropython/ports/esp32/partitions-16MiB-large-app.csv" ]; then
         rm "$PROJECT_ROOT/third-party/micropython/ports/esp32/partitions-16MiB-large-app.csv"
@@ -32,6 +39,8 @@ if [ "$1" = "cleanup" ]; then
         rm "$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/manifest.py"
         echo "Custom manifest file removed"
     fi
+    
+
     
     echo "Cleanup completed"
     exit 0
@@ -50,6 +59,21 @@ if [ -f "$PATCHES_DIR/lvgl_format_fix.patch" ]; then
         echo "LVGL format fix patch already applied or incompatible"
     fi
     cd "$PROJECT_ROOT"
+fi
+
+# Copy custom mpconfigboard.h for JTAG configuration
+if [ -f "$PATCHES_DIR/mpconfigboard.h" ]; then
+    echo "Copying custom mpconfigboard.h for JTAG configuration..."
+    BOARD_HEADER="$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/mpconfigboard.h"
+    if [ -f "$BOARD_HEADER" ]; then
+        # Create backup
+        cp "$BOARD_HEADER" "$BOARD_HEADER.backup"
+        # Copy custom header
+        cp "$PATCHES_DIR/mpconfigboard.h" "$BOARD_HEADER"
+        echo "Custom mpconfigboard.h copied successfully"
+    else
+        echo "Warning: Board header file not found: $BOARD_HEADER"
+    fi
 fi
 
 # Copy custom partition table to MicroPython directory
@@ -81,5 +105,7 @@ if [ -f "$PATCHES_DIR/manifest.py" ]; then
     cp "$PATCHES_DIR/manifest.py" "$MANIFEST_FILE"
     echo "Manifest file copied successfully"
 fi
+
+
 
 echo "All patches and configurations applied successfully"
