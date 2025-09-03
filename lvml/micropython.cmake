@@ -8,6 +8,55 @@ set(LVGL_DIR "${PROJECT_ROOT}/third-party/lvgl")
 # Add our source files to the lib
 target_sources(usermod_lvml INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/lvmlmodule.c
+    ${CMAKE_CURRENT_LIST_DIR}/lvml.c
+)
+
+# Add core source files
+file(GLOB CORE_SOURCES 
+    "${CMAKE_CURRENT_LIST_DIR}/core/*.c"
+)
+target_sources(usermod_lvml INTERFACE
+    ${CORE_SOURCES}
+)
+
+# Add XML parser source files
+file(GLOB XML_SOURCES 
+    "${CMAKE_CURRENT_LIST_DIR}/xml/*.c"
+)
+target_sources(usermod_lvml INTERFACE
+    ${XML_SOURCES}
+)
+
+# Add network manager source files
+file(GLOB NETWORK_SOURCES 
+    "${CMAKE_CURRENT_LIST_DIR}/network/*.c"
+)
+target_sources(usermod_lvml INTERFACE
+    ${NETWORK_SOURCES}
+)
+
+# Add MicroPython executor source files
+file(GLOB MICROPYTHON_SOURCES 
+    "${CMAKE_CURRENT_LIST_DIR}/micropython/*.c"
+)
+target_sources(usermod_lvml INTERFACE
+    ${MICROPYTHON_SOURCES}
+)
+
+# Add utility source files
+file(GLOB UTILS_SOURCES 
+    "${CMAKE_CURRENT_LIST_DIR}/utils/*.c"
+)
+target_sources(usermod_lvml INTERFACE
+    ${UTILS_SOURCES}
+)
+
+# Add driver source files
+file(GLOB DRIVER_SOURCES 
+    "${CMAKE_CURRENT_LIST_DIR}/driver/*.c"
+)
+target_sources(usermod_lvml INTERFACE
+    ${DRIVER_SOURCES}
 )
 
 # Add include directories
@@ -35,3 +84,6 @@ target_compile_definitions(usermod_lvml INTERFACE
 
 # Link our INTERFACE library to the usermod target.
 target_link_libraries(usermod INTERFACE usermod_lvml)
+
+# Add ESP-IDF components required for LCD driver
+# Note: esp_lcd component should be enabled in sdkconfig.board

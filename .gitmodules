@@ -7,3 +7,6 @@
 [submodule "third-party/lvgl"]
 	path = third-party/lvgl
 	url = https://github.com/lvgl/lvgl.git
+[submodule "third-party/TFT_eSPI"]
+	path = third-party/TFT_eSPI
+	url = https://github.com/Bodmer/TFT_eSPI.git
