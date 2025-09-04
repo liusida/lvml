@@ -9,6 +9,10 @@ esp_err_t esp32_s3_box3_lcd_init(void);
 void esp32_s3_box3_lcd_deinit(void);
 esp_err_t esp32_s3_box3_lcd_set_rotation(lv_display_rotation_t rotation);
 
+// Screen control functions
+void esp32_s3_box3_lcd_screen_on(void);
+void esp32_s3_box3_lcd_screen_off(void);
+
 // Display creation
 lv_display_t * esp32_s3_box3_lcd_create_display(uint32_t width, uint32_t height);
 

@@ -169,8 +169,8 @@ esp_err_t esp32_s3_box3_lcd_init(void) {
     gpio_set_level(LCD_PIN_NUM_RST, 0); // Low for normal operation
     mp_hal_delay_ms(10);
     
-    // Turn on backlight
-    gpio_set_level(LCD_PIN_NUM_BCKL, 1);
+    // Keep backlight off initially - will be turned on by lvml_core_screen_on()
+    gpio_set_level(LCD_PIN_NUM_BCKL, 0);
     
     lcd_initialized = true;
     return ESP_OK;
@@ -184,6 +184,20 @@ void esp32_s3_box3_lcd_deinit(void) {
     }
     spi_bus_free(SPI2_HOST);
     lcd_initialized = false;
+}
+
+// Turn screen on (enable backlight)
+void esp32_s3_box3_lcd_screen_on(void) {
+    if (lcd_initialized) {
+        gpio_set_level(LCD_PIN_NUM_BCKL, 1);
+    }
+}
+
+// Turn screen off (disable backlight)
+void esp32_s3_box3_lcd_screen_off(void) {
+    if (lcd_initialized) {
+        gpio_set_level(LCD_PIN_NUM_BCKL, 0);
+    }
 }
 
 // Set display rotation

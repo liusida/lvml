@@ -11,7 +11,7 @@
  *  STATIC VARIABLES
  **********************/
 
-static lv_obj_t* static_background = NULL;
+// No static variables needed for background
 
 /**********************
  *   GLOBAL FUNCTIONS
@@ -28,21 +28,14 @@ lvml_error_t lvml_ui_set_background(uint32_t color_hex) {
     uint8_t b = color_hex & 0xFF;
     lv_color_t lv_color = lv_color_make(r, g, b);
     
-    // Create background object if it doesn't exist
-    if (static_background == NULL) {
-        static_background = lv_obj_create(lv_screen_active());
-        if (static_background == NULL) {
-            return LVML_ERROR_MEMORY;
-        }
-        
-        // Set up background properties (only once)
-        lv_obj_set_style_bg_opa(static_background, LV_OPA_COVER, 0);
-        lv_obj_set_size(static_background, LV_PCT(100), LV_PCT(100));
-        lv_obj_center(static_background);
+    // Set background color directly on the active screen
+    lv_obj_t *current_screen = lv_screen_active();
+    if (current_screen == NULL) {
+        mp_printf(&mp_plat_print, "Error: No active screen\n");
+        return LVML_ERROR_INVALID_PARAM;
     }
-    
-    // Update background color
-    lv_obj_set_style_bg_color(static_background, lv_color, 0);
+    lv_obj_set_style_bg_color(current_screen, lv_color, 0);
+    lv_obj_set_style_bg_opa(current_screen, LV_OPA_COVER, 0);
     
     return LVML_OK;
 }

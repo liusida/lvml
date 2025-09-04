@@ -1,20 +1,44 @@
-# lvml - XML-Driven UI with MicroPython Scripting for ESP32-S3
+# LVML - XML-Driven UI with MicroPython Scripting for ESP32-S3
 
 A complete modular system that combines LVGL graphics, XML-based UI loading, WiFi connectivity, and MicroPython scripting for ESP32-S3 devices, specifically optimized for ESP32-S3-Box-3 with 16MB PSRAM support.
 
+## Current Development Focus
+
+Based on your current thinking, the main development priorities are:
+
+1. **Initialize BLE keyboard** - Enable Bluetooth Low Energy keyboard functionality
+2. **WiFi setting UI** - Create a user interface in `./boot/main.py` to configure WiFi (choose SSID and enter password)
+3. **Access URL for XML** - Fetch XML UI definitions from remote servers
+4. **Render XML** - Parse and display XML-based user interfaces
+
+The long-term vision is to have server-side XML (mixed with MicroPython) implement the business logic of applications, creating a flexible, remotely-updatable UI system.
+
 ## Features
 
-- ✅ **Modular Architecture** - Clean separation of concerns with pluggable modules
-- ✅ **XML-Driven UI** - Load user interfaces from XML files via WiFi or local storage
-- ✅ **MicroPython Scripting** - Execute Python scripts within UI elements
-- ✅ **LVGL Graphics Library** - Full LVGL v9.3.0 integration with XML support
-- ✅ **WiFi & HTTP Client** - Fetch UI definitions and data from remote servers
-- ✅ **ESP32-S3-Box-3 Optimized** - Configured for 16MB Octal PSRAM
-- ✅ **Display Buffer Management** - Automatic PSRAM allocation for 320x240 displays
-- ✅ **Memory Diagnostics** - Comprehensive memory information and monitoring
-- ✅ **Patch System** - Clean submodule management with automated patches
-- ✅ **Frozen Modules** - Python files built into firmware
-- ✅ **Custom Partition Tables** - Optimized flash layout for large applications
+### ✅ Completed (v1.0.0)
+- **Modular Architecture** - Clean separation of concerns with pluggable modules
+- **LVGL Graphics Library** - Full LVGL v9.3.0 integration with ESP32-S3-Box-3 LCD driver
+- **ESP32-S3-Box-3 Optimized** - Configured for 16MB Octal PSRAM with custom partition table
+- **Display Buffer Management** - Automatic PSRAM allocation for 320x240 displays
+- **Memory Diagnostics** - Comprehensive memory information and monitoring
+- **Patch System** - Clean submodule management with automated patches
+- **Frozen Modules** - Python files built into firmware
+- **Basic UI Elements** - Rectangles, buttons, text areas with color support
+- **MicroPython Integration** - Full MicroPython module interface
+
+### 🚧 In Development
+- **BLE Keyboard** - Bluetooth Low Energy keyboard functionality
+- **WiFi Configuration UI** - Interactive WiFi setup interface
+- **XML Parser** - Complete XML parsing and UI rendering
+- **Network Manager** - WiFi and HTTP client functionality
+- **MicroPython Script Execution** - Runtime script execution from XML
+
+### 📋 Planned Features
+- **Complete XML UI Support** - Full LVGL widget support via XML
+- **Advanced MicroPython Scripting** - Event handling and object binding
+- **Image Loading** - Support for images from URLs and local storage
+- **Animation Support** - Transitions and animations
+- **Chart Components** - Data visualization widgets
 
 ## Architecture
 
@@ -23,39 +47,49 @@ A complete modular system that combines LVGL graphics, XML-based UI loading, WiF
 The LVML system is built with a clean modular architecture:
 
 - `lvml/core/` - Core LVML functionality and LVGL integration
-- `lvml/xml/` - XML parsing and UI processing
-- `lvml/network/` - WiFi and HTTP client functionality
-- `lvml/micropython/` - MicroPython script execution engine
+- `lvml/xml/` - XML parsing and UI processing (in development)
+- `lvml/network/` - WiFi and HTTP client functionality (in development)
+- `lvml/micropython/` - MicroPython script execution engine (in development)
 - `lvml/utils/` - Memory management and utility functions
 - `lvml/driver/` - Hardware drivers (ESP32-S3-Box-3 LCD)
 
 ### Project Layout
 
-- `lvml/`
-  - `lvmlmodule.c`: Main MicroPython module interface
-  - `lvml.h` & `lvml.c`: Core LVML system coordination
-  - `micropython.cmake`: CMake configuration for the module
-  - `micropython.mk`: Makefile configuration
-- `patches/`
-  - `mpconfigboard.h`: MicroPython board configuration
-  - `sdkconfig.board`: ESP32-S3-Box-3 PSRAM configuration
-  - `manifest.py`: Frozen module configuration
-- `scripts/`
-  - `apply_patches.sh`: Automated patch and configuration system
-- `third-party/`
-  - `micropython/`: MicroPython v1.24-release (submodule)
-  - `lvgl/`: LVGL v9.3.0 (submodule) - includes XML support
-- `py/`
-  - `main.py`: Example main.py for ESP32 boot initialization
-  - `user_main.py`: Example customer application
-  - `user_code.py`: Alternative customer code format
+```
+lvml/
+├── lvmlmodule.c          # Main MicroPython module interface
+├── lvml.h & lvml.c       # Core LVML system coordination
+├── core/                 # Core LVML functionality
+│   ├── lvml_core.h/c     # Core system and display management
+│   └── lvml_ui.h/c       # UI element creation and management
+├── driver/               # Hardware drivers
+│   └── esp32_s3_box3_lcd.h/c  # ESP32-S3-Box-3 LCD driver
+├── xml/                  # XML parsing (in development)
+│   ├── xml_parser.h/c    # XML parsing and processing
+│   └── xml_ui.h/c        # XML to LVGL object conversion
+├── network/              # Network functionality (in development)
+│   ├── network_manager.h/c  # WiFi and HTTP client
+│   └── http_client.h/c   # HTTP request handling
+├── micropython/          # MicroPython integration (in development)
+│   └── mp_executor.h/c   # Script execution engine
+└── utils/                # Utility functions
+    └── memory_manager.h/c  # Memory management
+```
 
 ## Setup
+
+### Prerequisites
+
+- ESP-IDF v5.0+ (for ESP32-S3 support)
+- Python 3.8+
+- Git with submodule support
+
+### Installation
 
 Clone this repository with submodules:
 
 ```bash
-git clone --recurse-submodules git@github.com:liusida/lvml.git
+git clone --recurse-submodules https://github.com/yourusername/lvml.git
 cd lvml
 ```
 
@@ -65,11 +99,20 @@ Or if you already cloned without submodules:
 git submodule update --init --recursive
 ```
 
+### ESP-IDF Setup
+
+Source the ESP-IDF environment:
+
+```bash
+# Adjust path to your ESP-IDF installation
+source ~/esp-idf/export.sh
+```
+
 ## Build (ESP32-S3-Box-3 Optimized)
 
 The build system automatically applies patches and configurations for ESP32-S3-Box-3 with 16MB PSRAM support.
 
-### Automated Build System
+### Quick Build
 
 ```bash
 # Build firmware (automatically applies patches and PSRAM config)
@@ -77,9 +120,6 @@ make build
 
 # Clean all build artifacts
 make clean-all
-
-# Apply patches manually (if needed)
-make apply-patches
 
 # Show available targets
 make help
@@ -98,17 +138,8 @@ The build system automatically:
 
 ```bash
 cd third-party/micropython/ports/esp32
-export USER_C_MODULES=/Users/star/Projects/lvml/lvml/micropython.cmake
-make BOARD=ESP32_GENERIC_S3 VARIANT=SPIRAM_OCT USER_C_MODULES=/Users/star/Projects/lvml/lvml/micropython.cmake all
-```
-
-### Unix port (sanity check)
-
-```bash
-make -C third-party/micropython/ports/unix \
-  USER_C_MODULES=/Users/star/Projects/lvml/lvml/micropython.cmake \
-  all
-third-party/micropython/ports/unix/build-standard/micropython -c "import lvml; lvml.hello()"
+export USER_C_MODULES=/path/to/lvml/lvml/micropython.cmake
+make BOARD=ESP32_GENERIC_S3 VARIANT=SPIRAM_OCT USER_C_MODULES=/path/to/lvml/lvml/micropython.cmake all
 ```
 
 ## Usage
@@ -117,9 +148,6 @@ third-party/micropython/ports/unix/build-standard/micropython -c "import lvml; l
 
 ```python
 import lvml
-
-# Check memory status
-lvml.memory_info()
 
 # Initialize LVML (allocates display buffers in PSRAM)
 lvml.init()
@@ -132,9 +160,23 @@ print("LVML Version:", lvml.get_version())
 
 # Set background color
 lvml.set_bg("red")  # or "blue", "green", "black", "white", or hex like "0xFF0000"
+
+# Create UI elements
+lvml.rect(10, 10, 100, 50, "#FF0000", "#000000", 2)  # Red rectangle with black border
+lvml.button(50, 100, 120, 40, "Click Me", "#0066CC", "#FFFFFF")  # Blue button
+lvml.textarea(10, 150, 200, 80, "Enter text here...", "#FFFFFF", "#000000")  # Text area
+
+# Process LVGL tick (call periodically for animations)
+lvml.tick()
+
+# Set display rotation (0=0°, 1=90°, 2=180°, 3=270°)
+lvml.set_rotation(1)
+
+# Debug system
+lvml.debug(True)  # Shows memory info and test display
 ```
 
-### Network and XML UI Loading
+### Network and XML UI Loading (In Development)
 
 ```python
 import lvml
@@ -142,13 +184,13 @@ import lvml
 # Initialize LVML
 lvml.init()
 
-# Connect to WiFi
+# Connect to WiFi (planned)
 lvml.connect_wifi("MyWiFi", "password")
 
-# Load UI from remote XML file
+# Load UI from remote XML file (planned)
 lvml.load_from_url("http://example.com/ui.xml")
 
-# Or load UI from local XML string
+# Or load UI from local XML string (planned)
 xml_data = """
 <ui>
   <button text="Hello World" x="100" y="100" width="120" height="40">
@@ -160,103 +202,27 @@ xml_data = """
 """
 lvml.load_from_xml(xml_data)
 
-# Check if all systems are ready
+# Check if all systems are ready (planned)
 if lvml.is_ready():
     print("LVML is ready for operation!")
 ```
 
-### Advanced Features
+### Color Format Support
+
+LVML supports multiple color formats:
 
 ```python
-import lvml
+# CSS-style hex colors (recommended)
+lvml.rect(10, 10, 50, 50, "#FF0000", "#000000", 0)
 
-# Set display rotation (0=0°, 1=90°, 2=180°, 3=270°)
-lvml.set_rotation(1)
+# Named colors
+lvml.rect(10, 70, 50, 50, "red", "black", 0)
 
-# Call LVGL tick handler (for animations and updates)
-lvml.tick()
+# C-style hex colors
+lvml.rect(10, 130, 50, 50, 0xFF0000, 0x000000, 0)
 
-# Clean up when done
-lvml.deinit()
-```
-
-## XML UI Format
-
-LVML supports XML-based UI definitions with embedded MicroPython scripting:
-
-```xml
-<ui title="My Application">
-  <button id="btn1" text="Click Me" x="50" y="50" width="100" height="40">
-    <script event="click">
-      print("Button clicked!")
-      # Access LVGL objects by ID
-      btn1.set_text("Clicked!")
-    </script>
-  </button>
-  
-  <label id="lbl1" text="Status: Ready" x="50" y="100" width="200" height="30"/>
-  
-  <slider id="slider1" x="50" y="150" width="200" height="20" min="0" max="100" value="50">
-    <script event="value_changed">
-      value = slider1.get_value()
-      lbl1.set_text(f"Value: {value}")
-    </script>
-  </slider>
-</ui>
-```
-
-### Supported UI Elements
-
-- **Buttons** - Clickable buttons with text
-- **Labels** - Text display elements
-- **Sliders** - Value input controls
-- **Images** - Display images from URLs or local storage
-- **Containers** - Group and layout elements
-- **Charts** - Data visualization components
-
-### MicroPython Scripting
-
-Scripts can be embedded in any UI element and executed on events:
-
-- **click** - Button click events
-- **value_changed** - Slider/input value changes
-- **long_press** - Long press gestures
-- **focus** - Element focus events
-
-### Expected Output
-
-```python
->>> import lvml
->>> lvml.memory_info()
-=== Memory Information ===
-PSRAM:     Total=16777216 bytes, Free=16777216 bytes, Largest=16777216 bytes
-Internal:  Total=  353919 bytes, Free=  274299 bytes, Largest=  180224 bytes
-PSRAM usage: 0% used
-Internal RAM usage: 20% used
-Total system memory: 17131135 bytes, 0% used
-========================
-
->>> lvml.init()
-[LVML] Initializing core system v1.0.0
-[LVML] Custom delay callback set up
-[LVML] Core system initialized successfully
-[XML] XML parser initialized successfully
-[NETWORK] Network manager initialized successfully
-[MP] MicroPython executor initialized successfully
-Memory: PSRAM=16777216 bytes, Internal=353919 bytes
-Display buffers allocated in PSRAM (115200 bytes each)
-ESP32-S3-Box-3 LCD display created successfully!
-LVML initialization complete
-
->>> lvml.connect_wifi("MyWiFi", "password")
-[NETWORK] Connecting to WiFi: MyWiFi
-[NETWORK] WiFi connected successfully
-
->>> lvml.load_from_url("http://example.com/ui.xml")
-[NETWORK] Fetching URL: http://example.com/ui.xml
-[XML] Parsing XML data (1024 bytes)
-[MP] Executing 2 MicroPython scripts
-LVML UI loaded successfully from URL
+# Plain hex strings
+lvml.rect(10, 190, 50, 50, "FF0000", "000000", 0)
 ```
 
 ## Hardware Requirements
@@ -270,23 +236,53 @@ LVML UI loaded successfully from URL
 
 ### Frozen Modules (Built into Firmware)
 
-Python files in the `py/` directory are automatically built into the firmware as frozen modules:
+Python files in the `boot/` directory are automatically built into the firmware as frozen modules:
 
-- `main.py` - Boot initialization
-- `user_main.py` - Customer application
-- `user_code.py` - Alternative customer code
+- `boot/main.py` - Boot initialization and WiFi setup UI (planned)
 
-### Manual Upload (Alternative)
+### Current Boot Process
 
-If you prefer to upload files manually:
-
-```bash
-# Upload main.py (required)
-ampy --port /dev/ttyUSB0 put py/main.py
-
-# Upload customer code
-ampy --port /dev/ttyUSB0 put py/user_main.py
+```python
+# boot/main.py - Current simple initialization
+import lvml
+lvml.init()
 ```
+
+### Planned WiFi Setup UI
+
+The planned WiFi setup UI in `boot/main.py` will provide:
+
+1. **SSID Selection** - Scan and display available WiFi networks
+2. **Password Input** - Secure password entry interface
+3. **Connection Status** - Real-time connection feedback
+4. **Configuration Storage** - Save WiFi credentials for future use
+
+## Development Status
+
+### Current Implementation
+
+The project currently provides a solid foundation with:
+
+- **Working LVGL Integration** - Full display support with PSRAM optimization
+- **Basic UI Elements** - Rectangles, buttons, text areas
+- **Memory Management** - Comprehensive PSRAM and internal RAM handling
+- **Build System** - Automated patching and configuration
+- **MicroPython Module** - Complete Python interface
+
+### In Development
+
+- **BLE Keyboard** - Bluetooth Low Energy keyboard functionality
+- **WiFi Configuration** - Interactive setup interface
+- **XML Parser** - Complete XML parsing and UI rendering
+- **Network Manager** - WiFi and HTTP client functionality
+
+### Architecture Benefits
+
+1. **Modular Design** - Easy to extend and maintain
+2. **PSRAM Optimization** - Efficient use of 16MB external RAM
+3. **Remote Updates** - XML-based UI allows server-side updates
+4. **MicroPython Integration** - Python scripting for business logic
+5. **Hardware Abstraction** - Clean separation from hardware specifics
 
 ## Troubleshooting
 
@@ -299,7 +295,7 @@ If PSRAM is not detected:
 
 ### Memory Issues
 
-Use `lvml.memory_info()` to diagnose memory problems:
+Use `lvml.debug()` to diagnose memory problems:
 - PSRAM should show 16,777,216 bytes (16MB)
 - Internal RAM should show ~350KB
 - Display buffers require ~230KB total
@@ -312,30 +308,6 @@ make clean-all
 make build
 ```
 
-## Development Status
-
-### ✅ Completed (v1.0.0)
-- Modular architecture with clean interfaces
-- Core LVML system with LVGL integration
-- ESP32-S3-Box-3 LCD driver
-- Memory management utilities
-- Build system with automatic file discovery
-- MicroPython module interface
-
-### 🚧 In Development
-- XML parser implementation
-- WiFi and HTTP client functionality
-- MicroPython script execution engine
-- LVGL object binding system
-
-### 📋 Planned Features
-- Complete XML UI element support
-- Advanced MicroPython scripting capabilities
-- Network data fetching and display
-- Image loading from URLs
-- Chart and graph components
-- Animation and transition support
-
 ## Contributing
 
 1. Fork the repository
@@ -346,14 +318,45 @@ make build
 
 ### Development Areas
 
-- **XML Parser**: Implement actual XML parsing and LVGL object creation
+- **BLE Keyboard**: Implement Bluetooth Low Energy keyboard functionality
+- **WiFi UI**: Create interactive WiFi configuration interface
+- **XML Parser**: Complete XML parsing and LVGL object creation
 - **Network Module**: Add real WiFi and HTTP client functionality
 - **MicroPython Integration**: Complete script execution and LVGL object binding
 - **UI Components**: Add support for more LVGL widgets
-- **Examples**: Create example XML files and applications
 
 ## License
 
 This project is open source. See individual component licenses:
 - MicroPython: MIT License
 - LVGL: MIT License
+
+## Roadmap
+
+### Phase 1: Core Foundation ✅
+- [x] LVGL integration with ESP32-S3-Box-3
+- [x] Basic UI elements (rectangles, buttons, text areas)
+- [x] Memory management and PSRAM optimization
+- [x] Build system and patching
+
+### Phase 2: Network & Configuration 🚧
+- [ ] BLE keyboard functionality
+- [ ] WiFi configuration UI
+- [ ] Network manager implementation
+- [ ] HTTP client for XML fetching
+
+### Phase 3: XML & Scripting 📋
+- [ ] Complete XML parser
+- [ ] MicroPython script execution
+- [ ] Event handling system
+- [ ] Advanced UI components
+
+### Phase 4: Advanced Features 📋
+- [ ] Image loading and display
+- [ ] Animation and transitions
+- [ ] Chart and graph components
+- [ ] Remote update system
+
+---
+
+**Note**: This project is actively under development. The current implementation provides a solid foundation for XML-driven UIs with MicroPython scripting on ESP32-S3 devices.

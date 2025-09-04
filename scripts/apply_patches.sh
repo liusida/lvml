@@ -40,6 +40,13 @@ if [ "$1" = "cleanup" ]; then
         echo "Custom manifest file removed"
     fi
     
+    # Restore original CMake file
+    CMAKE_FILE="$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/mpconfigboard.cmake"
+    if [ -f "$CMAKE_FILE.backup" ]; then
+        mv "$CMAKE_FILE.backup" "$CMAKE_FILE"
+        echo "CMake file restored"
+    fi
+    
 
     
     echo "Cleanup completed"
@@ -104,6 +111,21 @@ if [ -f "$PATCHES_DIR/manifest.py" ]; then
     MANIFEST_FILE="$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/manifest.py"
     cp "$PATCHES_DIR/manifest.py" "$MANIFEST_FILE"
     echo "Manifest file copied successfully"
+fi
+
+# Copy custom CMake configuration for frozen manifest
+if [ -f "$PATCHES_DIR/mpconfigboard.cmake" ]; then
+    echo "Copying custom mpconfigboard.cmake for frozen manifest..."
+    CMAKE_FILE="$PROJECT_ROOT/third-party/micropython/ports/esp32/boards/ESP32_GENERIC_S3/mpconfigboard.cmake"
+    if [ -f "$CMAKE_FILE" ]; then
+        # Create backup
+        cp "$CMAKE_FILE" "$CMAKE_FILE.backup"
+        # Copy custom CMake file
+        cp "$PATCHES_DIR/mpconfigboard.cmake" "$CMAKE_FILE"
+        echo "Custom mpconfigboard.cmake copied successfully"
+    else
+        echo "Warning: CMake file not found: $CMAKE_FILE"
+    fi
 fi
 
 

@@ -433,12 +433,6 @@ static mp_obj_t lvml_debug_mp(size_t n_args, const mp_obj_t *args) {
         if (result != LVML_OK) {
             mp_printf(&mp_plat_print, "Failed to create green rectangle\n");
         }
-        
-        // Force refresh
-        result = lvml_core_refresh_now();
-        if (result != LVML_OK) {
-            mp_printf(&mp_plat_print, "Failed to refresh display\n");
-        }
     }
     
     return mp_const_none;

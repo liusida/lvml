@@ -94,6 +94,19 @@ lvml_error_t lvml_core_init(void) {
     
     // Set up display buffers
     lv_display_set_buffers(disp, display_buf1, display_buf2, buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+
+    // Due to unknown reason in refr_timer, we need to call lv_display_refr_timer in our tick handler manually.
+    lv_display_delete_refr_timer(disp);
+    
+    // Set black background before turning on screen
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x000000), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_COVER, LV_PART_MAIN);
+    
+    // Force a refresh to show black background
+    lv_display_refr_timer(NULL);
+    
+    // Turn on screen after setting black background
+    esp32_s3_box3_lcd_screen_on();
     
     lvml_initialized = true;
     
@@ -209,19 +222,11 @@ lvml_error_t lvml_core_tick(void) {
     
     // Process LVGL tick and timer handler
     lv_tick_inc(1);
-    lv_timer_handler();
-    
-    return LVML_OK;
-}
 
-lvml_error_t lvml_core_refresh_now(void) {
-    if (!lvml_initialized) {
-        return LVML_ERROR_INIT;
-    }
-    
-    // Force immediate refresh of all displays
-    lv_refr_now(NULL);
-    
+    lv_timer_handler();
+
+    lv_display_refr_timer(NULL);
+
     return LVML_OK;
 }
 
@@ -239,6 +244,24 @@ lvml_error_t lvml_core_print_refresh_info(void) {
               lv_display_get_horizontal_resolution(disp), 
               lv_display_get_vertical_resolution(disp));
     
+    return LVML_OK;
+}
+
+lvml_error_t lvml_core_screen_on(void) {
+    if (!lvml_initialized) {
+        return LVML_ERROR_INIT;
+    }
+    
+    esp32_s3_box3_lcd_screen_on();
+    return LVML_OK;
+}
+
+lvml_error_t lvml_core_screen_off(void) {
+    if (!lvml_initialized) {
+        return LVML_ERROR_INIT;
+    }
+    
+    esp32_s3_box3_lcd_screen_off();
     return LVML_OK;
 }
 
