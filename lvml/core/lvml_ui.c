@@ -73,8 +73,13 @@ lvml_error_t lvml_ui_parse_color(const char* color_str, int color_int, uint32_t*
         } else {
             // Try to parse as hex string
             if (strncmp(color_str, "0x", 2) == 0) {
+                // C-style hex: 0xFF0000
                 *color_hex = strtoul(color_str, NULL, 16);
+            } else if (strncmp(color_str, "#", 1) == 0) {
+                // CSS-style hex: #FF0000
+                *color_hex = strtoul(color_str + 1, NULL, 16);
             } else {
+                // Plain hex: FF0000
                 *color_hex = strtoul(color_str, NULL, 16);
             }
         }

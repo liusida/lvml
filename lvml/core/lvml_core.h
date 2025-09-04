@@ -99,6 +99,18 @@ lvml_error_t lvml_core_deinit(void);
  */
 lvml_error_t lvml_core_tick(void);
 
+/**
+ * Force immediate refresh of all displays
+ * @return LVML_OK on success, error code on failure
+ */
+lvml_error_t lvml_core_refresh_now(void);
+
+/**
+ * Print debug information about display refresh state
+ * @return LVML_OK on success, error code on failure
+ */
+lvml_error_t lvml_core_print_refresh_info(void);
+
 // UI management functions
 #include "lvml_ui.h"
 

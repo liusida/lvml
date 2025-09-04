@@ -33,9 +33,12 @@ build: check-deps init-submodules apply-patches build-mpy-cross
 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
 		export USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake && \
 		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake all
-	@cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/firmware.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin 2>/dev/null || \
-		cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/micropython.bin $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin
-	@printf "$(GREEN)[SUCCESS]$(NC) Firmware built: $(BUILD_DIR)/lvml-$(BOARD)-$(VARIANT).bin\n"
+	@cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/firmware.bin $(BUILD_DIR)/firmware.bin 2>/dev/null || \
+		cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/micropython.bin $(BUILD_DIR)/firmware.bin
+	@cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/firmware.elf $(BUILD_DIR)/firmware.elf 2>/dev/null || \
+		cp $(MICROPYTHON_DIR)/ports/esp32/build-$(BOARD)/micropython.elf $(BUILD_DIR)/firmware.elf
+	@printf "$(GREEN)[SUCCESS]$(NC) Firmware built: $(BUILD_DIR)/firmware.bin\n"
+	@printf "$(GREEN)[SUCCESS]$(NC) ELF file: $(BUILD_DIR)/firmware.elf\n"
 
 # Help target
 help:
@@ -76,7 +79,7 @@ check-deps:
 	fi
 	@if [ -z "$$IDF_PATH" ]; then \
 		printf "$(RED)[ERROR]$(NC) ESP-IDF not found. Please source ESP-IDF environment first:\n"; \
-		printf "$(RED)[ERROR]$(NC)   source $$IDF_PATH/export.sh\n"; \
+		printf "$(RED)[ERROR]$(NC)   source ~/Projects/github/esp-idf/export.sh\n"; \
 		exit 1; \
 	fi
 	@printf "$(GREEN)[SUCCESS]$(NC) All dependencies found\n"

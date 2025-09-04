@@ -10,6 +10,9 @@
 #include "driver/esp32_s3_box3_lcd.h"
 #include "esp_timer.h"
 #include "lvml.h"
+#include "mphalport.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 /**********************
  *  STATIC PROTOTYPES
@@ -22,7 +25,6 @@ static void custom_delay_ms(uint32_t ms);
  **********************/
 
 static bool lvml_initialized = false;
-static esp_timer_handle_t lvgl_timer = NULL;
 static lv_color_t *display_buf1 = NULL;
 static lv_color_t *display_buf2 = NULL;
 
@@ -104,8 +106,11 @@ lvml_error_t lvml_core_init(void) {
     
     mp_printf(&mp_plat_print, "[LVML] ESP32-S3-Box-3 LCD display created successfully!\n");
     
+    // Manual ticking required - LVGL FreeRTOS integration disabled due to compilation issues
+    mp_printf(&mp_plat_print, "[LVML] Manual ticking required - call lvml.tick() periodically\n");
+    
     lvml_initialized = true;
-    mp_printf(&mp_plat_print, "[LVML] Initialization complete\n");
+    mp_printf(&mp_plat_print, "[LVML] Initialization complete - automatic ticking enabled\n");
     
     return LVML_OK;
 }
@@ -197,14 +202,6 @@ lvml_error_t lvml_core_deinit(void) {
     
     mp_printf(&mp_plat_print, "[LVML] Deinitializing core system\n");
     
-    // Stop and delete timer if it exists
-    if (lvgl_timer != NULL) {
-        esp_timer_stop(lvgl_timer);
-        esp_timer_delete(lvgl_timer);
-        lvgl_timer = NULL;
-        mp_printf(&mp_plat_print, "[LVML] Timer stopped and deleted\n");
-    }
-    
     // Free display buffers
     if (display_buf1 != NULL) {
         heap_caps_free(display_buf1);
@@ -232,8 +229,51 @@ lvml_error_t lvml_core_tick(void) {
         return LVML_ERROR_INIT;
     }
     
+    // Note: This function is now optional since LVGL FreeRTOS integration handles automatic ticking
+    // LVGL will manage its own timing and refresh internally
+    // This function can still be called for manual control if needed
+    
+    // Process LVGL tick and timer handler
     lv_tick_inc(1);
     lv_timer_handler();
+    // lv_display_refr_timer(NULL);
+    
+    return LVML_OK;
+}
+
+lvml_error_t lvml_core_refresh_now(void) {
+    if (!lvml_initialized) {
+        mp_printf(&mp_plat_print, "[LVML] Core system not initialized\n");
+        return LVML_ERROR_INIT;
+    }
+    
+    // Force immediate refresh of all displays
+    lv_refr_now(NULL);
+    
+    return LVML_OK;
+}
+
+lvml_error_t lvml_core_print_refresh_info(void) {
+    if (!lvml_initialized) {
+        mp_printf(&mp_plat_print, "[LVML] Core system not initialized\n");
+        return LVML_ERROR_INIT;
+    }
+    
+    lv_display_t *disp = lv_display_get_default();
+    if (disp == NULL) {
+        mp_printf(&mp_plat_print, "[LVML] No default display found\n");
+        return LVML_ERROR_INIT;
+    }
+    
+    mp_printf(&mp_plat_print, "=== Display Refresh Information ===\n");
+    mp_printf(&mp_plat_print, "Display resolution: %dx%d\n", 
+              lv_display_get_horizontal_resolution(disp), 
+              lv_display_get_vertical_resolution(disp));
+    mp_printf(&mp_plat_print, "Refresh timer: %s\n", 
+              lv_display_get_refr_timer(disp) ? "ENABLED" : "DISABLED");
+    mp_printf(&mp_plat_print, "LVGL FreeRTOS integration: DISABLED (compilation error)\n");
+    mp_printf(&mp_plat_print, "Refresh rate: Manual (call lvml.tick() periodically)\n");
+    mp_printf(&mp_plat_print, "=====================================\n");
     
     return LVML_OK;
 }
@@ -241,6 +281,7 @@ lvml_error_t lvml_core_tick(void) {
 /**********************
  *   STATIC FUNCTIONS
  **********************/
+
 
 /**
  * Custom delay function that uses MicroPython's delay instead of LVGL's tick-based delay

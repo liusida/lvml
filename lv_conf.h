@@ -66,4 +66,11 @@
 #define DISPLAY_RESET_PIN   48
 #define DISPLAY_BACKLIGHT_PIN 47
 
+
+// Temporarily disable LVGL FreeRTOS integration due to compilation error
+// #define LV_USE_OS LV_OS_FREERTOS
+// #define LV_TICK_CUSTOM 1
+// #define LV_TICK_CUSTOM_INCLUDE "freertos/FreeRTOS.h"
+// #define LV_TICK_CUSTOM_SYS_TIME_EXPR (xTaskGetTickCount() * portTICK_PERIOD_MS)
+
 #endif /* LV_CONF_H */

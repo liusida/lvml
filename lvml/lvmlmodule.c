@@ -1,7 +1,16 @@
 // lvml MicroPython user C module
-// Provides: lvml.hello(), lvml.init(), lvml.set_bg(), lvml.tick(), lvml.memory_info()
-//           lvml.load_from_url(), lvml.load_from_xml(), lvml.connect_wifi(), lvml.is_ready()
-//           lvml.get_version(), lvml.rect(), lvml.test_rotation()
+// Core: lvml.init() - Initialize LVML system
+//      lvml.set_bg() - Set background color  
+//      lvml.rect() - Draw rectangles
+//      lvml.tick() - Process LVGL timers (call periodically)
+//      lvml.debug() - Debug system and test display
+// Network: lvml.connect_wifi() - Connect to WiFi
+//          lvml.load_from_url() - Load UI from URL
+//          lvml.load_from_xml() - Load UI from XML data
+// Info: lvml.is_ready() - Check if LVML is ready
+//       lvml.get_version() - Get LVML version
+//       lvml.memory_info() - Show memory information
+//       lvml.hello() - Simple hello function
 
 #include "py/runtime.h"
 #include "py/mphal.h"
@@ -275,52 +284,72 @@ static mp_obj_t lvml_rect_mp(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(lvml_rect_obj, 7, 7, lvml_rect_mp);
 
-// Test function to try different MADCTL values for debugging
-static mp_obj_t lvml_test_rotation_mp(mp_obj_t madctl_value_obj) {
+// Consolidated debug function
+static mp_obj_t lvml_debug_mp(size_t n_args, const mp_obj_t *args) {
     if (!lvgl_initialized) {
         mp_raise_msg(&mp_type_RuntimeError, "LVML not initialized. Call lvml.init() first.");
     }
     
-    int madctl_value = mp_obj_get_int(madctl_value_obj);
-    if (madctl_value < 0 || madctl_value > 255) {
-        mp_raise_msg(&mp_type_ValueError, "MADCTL value must be between 0 and 255");
+    mp_printf(&mp_plat_print, "=== LVML Debug Information ===\n");
+    
+    // Print memory info
+    mp_printf(&mp_plat_print, "1. Memory Information:\n");
+    lvml_core_print_memory_info();
+    
+    // Print refresh info
+    mp_printf(&mp_plat_print, "\n2. Display Refresh Information:\n");
+    lvml_core_print_refresh_info();
+    
+    // Test display if requested
+    if (n_args > 0 && mp_obj_is_true(args[0])) {
+        mp_printf(&mp_plat_print, "\n3. Testing Display:\n");
+        
+        // Set white background
+        lvml_error_t result = lvml_ui_set_background(0xFFFFFF);
+        if (result != LVML_OK) {
+            mp_printf(&mp_plat_print, "   ✗ Failed to set background\n");
+        } else {
+            mp_printf(&mp_plat_print, "   ✓ White background set\n");
+        }
+        
+        // Create test rectangles
+        result = lvml_ui_rect(50, 50, 100, 100, 0xFF0000, 0x000000, 0);  // Red
+        if (result != LVML_OK) {
+            mp_printf(&mp_plat_print, "   ✗ Failed to create red rectangle\n");
+        } else {
+            mp_printf(&mp_plat_print, "   ✓ Red rectangle created\n");
+        }
+        
+        result = lvml_ui_rect(200, 50, 100, 100, 0x0000FF, 0x000000, 0);  // Blue
+        if (result != LVML_OK) {
+            mp_printf(&mp_plat_print, "   ✗ Failed to create blue rectangle\n");
+        } else {
+            mp_printf(&mp_plat_print, "   ✓ Blue rectangle created\n");
+        }
+        
+        result = lvml_ui_rect(50, 200, 100, 100, 0x00FF00, 0x000000, 0);  // Green
+        if (result != LVML_OK) {
+            mp_printf(&mp_plat_print, "   ✗ Failed to create green rectangle\n");
+        } else {
+            mp_printf(&mp_plat_print, "   ✓ Green rectangle created\n");
+        }
+        
+        // Force refresh
+        result = lvml_core_refresh_now();
+        if (result != LVML_OK) {
+            mp_printf(&mp_plat_print, "   ✗ Failed to refresh display\n");
+        } else {
+            mp_printf(&mp_plat_print, "   ✓ Display refreshed\n");
+        }
+        
+        mp_printf(&mp_plat_print, "   Display test complete - check for colored rectangles\n");
     }
     
-    // Call the test function
-    esp_err_t result = esp32_s3_box3_lcd_test_rotation((uint8_t)madctl_value);
-    if (result != ESP_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to test rotation");
-    }
+    mp_printf(&mp_plat_print, "==============================\n");
     
     return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_1(lvml_test_rotation_obj, lvml_test_rotation_mp);
-
-// Simple test function to check if display is working
-static mp_obj_t lvml_test_display_mp(void) {
-    if (!lvgl_initialized) {
-        mp_raise_msg(&mp_type_RuntimeError, "LVML not initialized. Call lvml.init() first.");
-    }
-    
-    mp_printf(&mp_plat_print, "Testing display with white background...\n");
-    
-    // Set white background
-    lvml_error_t result = lvml_ui_set_background(0xFFFFFF);
-    if (result != LVML_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to set background");
-    }
-    
-    // Create a red rectangle
-    result = lvml_ui_rect(50, 50, 100, 100, 0xFF0000, 0x000000, 0);
-    if (result != LVML_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to create test rectangle");
-    }
-    
-    mp_printf(&mp_plat_print, "Display test complete - you should see white background with red rectangle\n");
-    
-    return mp_const_none;
-}
-static MP_DEFINE_CONST_FUN_OBJ_0(lvml_test_display_obj, lvml_test_display_mp);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(lvml_debug_obj, 0, 1, lvml_debug_mp);
 
 static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_lvml) },
@@ -338,8 +367,7 @@ static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_is_ready), MP_ROM_PTR(&lvml_is_ready_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_version), MP_ROM_PTR(&lvml_get_version_obj) },
     { MP_ROM_QSTR(MP_QSTR_rect), MP_ROM_PTR(&lvml_rect_obj) },
-    { MP_ROM_QSTR(MP_QSTR_test_rotation), MP_ROM_PTR(&lvml_test_rotation_obj) },
-    { MP_ROM_QSTR(MP_QSTR_test_display), MP_ROM_PTR(&lvml_test_display_obj) },
+    { MP_ROM_QSTR(MP_QSTR_debug), MP_ROM_PTR(&lvml_debug_obj) },
 };
 static MP_DEFINE_CONST_DICT(lvml_module_globals, lvml_module_globals_table);
 
