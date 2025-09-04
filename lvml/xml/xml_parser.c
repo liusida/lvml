@@ -4,7 +4,7 @@
  */
 
 #include "xml_parser.h"
-#include "py/mphal.h"
+#include "micropython/py/mphal.h"
 
 /**********************
  *  STATIC VARIABLES

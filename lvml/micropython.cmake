@@ -3,7 +3,8 @@ add_library(usermod_lvml INTERFACE)
 
 # Get the project root directory (assuming this file is in PROJECT_ROOT/lvml/)
 get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
-set(LVGL_DIR "${PROJECT_ROOT}/third-party/lvgl")
+set(THIRD_PARTY_ROOT "${PROJECT_ROOT}/third-party")
+set(LVGL_DIR "${THIRD_PARTY_ROOT}/lvgl")
 
 # Add our source files to the lib
 target_sources(usermod_lvml INTERFACE
@@ -62,7 +63,7 @@ target_sources(usermod_lvml INTERFACE
 # Add include directories
 target_include_directories(usermod_lvml INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}
-    ${LVGL_DIR}
+    ${THIRD_PARTY_ROOT}
     ${PROJECT_ROOT}
 )
 

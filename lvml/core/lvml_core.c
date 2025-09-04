@@ -4,8 +4,8 @@
  */
 
 #include "lvml_core.h"
-#include "py/mphal.h"
-#include "src/tick/lv_tick.h"
+#include "micropython/py/mphal.h"
+#include "lvgl/src/tick/lv_tick.h"
 #include "esp_heap_caps.h"
 #include "driver/esp32_s3_box3_lcd.h"
 #include "esp_timer.h"
@@ -19,6 +19,7 @@
  **********************/
 
 static void custom_delay_ms(uint32_t ms);
+static void lvml_log_callback(lv_log_level_t level, const char * buf);
 
 /**********************
  *  STATIC VARIABLES
@@ -39,6 +40,8 @@ lvml_error_t lvml_core_init(void) {
     
     // Initialize LVGL
     lv_init();
+
+    lv_log_register_print_cb(lvml_log_callback);
     
     // Set up custom delay function to avoid LVGL tick dependency
     lv_delay_set_cb(custom_delay_ms);
@@ -276,4 +279,17 @@ lvml_error_t lvml_core_screen_off(void) {
  */
 static void custom_delay_ms(uint32_t ms) {
     mp_hal_delay_ms(ms);
+}
+
+static void lvml_log_callback(lv_log_level_t level, const char * buf) {
+    const char* level_str;
+    switch(level) {
+        case LV_LOG_LEVEL_TRACE: level_str = "TRACE"; break;  // Most detailed
+        case LV_LOG_LEVEL_INFO:  level_str = "INFO";  break;  // Important events
+        case LV_LOG_LEVEL_WARN:  level_str = "WARN";  break;  // Something wrong but not critical
+        case LV_LOG_LEVEL_ERROR: level_str = "ERROR"; break;  // Critical problems
+        case LV_LOG_LEVEL_USER:  level_str = "USER";  break;  // Your custom messages
+        default: level_str = "UNKNOWN"; break;
+    }
+    mp_printf(&mp_plat_print, "[LVGL-%s] %s", level_str, buf);
 }

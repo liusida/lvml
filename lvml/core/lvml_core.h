@@ -6,8 +6,8 @@
 #ifndef LVML_CORE_H
 #define LVML_CORE_H
 
-#include "py/runtime.h"
-#include "lvgl.h"
+#include "micropython/py/runtime.h"
+#include "lvgl/lvgl.h"
 
 #ifdef __cplusplus
 extern "C" {

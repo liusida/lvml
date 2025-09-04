@@ -8,8 +8,18 @@
 
 // LVGL Memory Management Configuration
 #define LV_USE_STDLIB_MALLOC LV_STDLIB_BUILTIN
-#define LV_MEM_SIZE (128 * 1024U)  // 128KB for LVGL memory pool
+#define LV_MEM_SIZE (4 * 1024 * 1024U)  // 4MB for LVGL memory pool
 #define LV_MEM_POOL_EXPAND_SIZE 0
+
+// Let LVGL allocate memory from PSRAM
+// Ensure the header is included before calling the allocator macro
+#define LV_MEM_POOL_INCLUDE "esp_heap_caps.h"
+// Allocate LVGL's memory pool from PSRAM with 8-bit access
+#define LV_MEM_POOL_ALLOC(size) heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+
+// Fix mp_printf %zu problem
+#define LV_USE_STDLIB_STRING  LV_STDLIB_CLIB
+#define LV_USE_STDLIB_SPRINTF LV_STDLIB_CLIB
 
 #define LV_COLOR_DEPTH 16
 #define LV_COLOR_16_SWAP 1
@@ -45,7 +55,7 @@
 #define LV_FS_IF_LITTLEFS  'S'    // choose the letter you want to use
 
 #define LV_USE_LOG      1
-#define LV_LOG_LEVEL    LV_LOG_LEVEL_TRACE
+#define LV_LOG_LEVEL    LV_LOG_LEVEL_WARN
 
 
 

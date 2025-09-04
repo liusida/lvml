@@ -1,9 +1,9 @@
 #include "esp32_s3_box3_lcd.h"
 #include "lv_conf.h"
-#include "py/mphal.h"
-#include "py/runtime.h"
-#include "src/drivers/display/ili9341/lv_ili9341.h"
-#include "src/tick/lv_tick.h"
+#include "micropython/py/mphal.h"
+#include "micropython/py/runtime.h"
+#include "lvgl/src/drivers/display/ili9341/lv_ili9341.h"
+#include "lvgl/src/tick/lv_tick.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 

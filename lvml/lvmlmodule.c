@@ -12,8 +12,8 @@
 // Info: lvml.is_ready() - Check if LVML is ready
 //       lvml.get_version() - Get LVML version
 
-#include "py/runtime.h"
-#include "py/mphal.h"
+#include "micropython/py/runtime.h"
+#include "micropython/py/mphal.h"
 #include "lvml.h"
 #include "driver/esp32_s3_box3_lcd.h"
 
@@ -398,6 +398,46 @@ static mp_obj_t lvml_textarea_mp(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(lvml_textarea_obj, 7, 7, lvml_textarea_mp);
 
+static mp_obj_t lvml_show_image_mp(size_t n_args, const mp_obj_t *args) {
+    if (!lvgl_initialized) {
+        mp_raise_msg(&mp_type_RuntimeError, "LVGL not initialized. Call lvml.init() first.");
+    }
+    
+    // Validate argument count (1-3 arguments: data, x, y)
+    if (n_args < 1 || n_args > 3) {
+        mp_raise_msg(&mp_type_TypeError, "show_image() takes 1 to 3 arguments: data, x, y");
+    }
+    
+    // Get PNG data (required)
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(args[0], &bufinfo, MP_BUFFER_READ);
+    
+    // Get optional position parameters with defaults
+    int x = -1;  // -1 means center
+    int y = -1;  // -1 means center
+    
+    if (n_args >= 2) {
+        x = mp_obj_get_int(args[1]);
+    }
+    if (n_args >= 3) {
+        y = mp_obj_get_int(args[2]);
+    }
+    
+    // Show image from raw data (let LVGL handle size automatically)
+    lvml_error_t result = lvml_ui_show_image_data((const uint8_t*)bufinfo.buf, bufinfo.len, x, y);
+    
+    if (result != LVML_OK) {
+        if (result == LVML_ERROR_INVALID_PARAM) {
+            mp_raise_msg(&mp_type_ValueError, "Invalid image parameters");
+        } else {
+            mp_raise_msg(&mp_type_RuntimeError, "Failed to show image");
+        }
+    }
+    
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(lvml_show_image_obj, 1, 3, lvml_show_image_mp);
+
 // Consolidated debug function
 static mp_obj_t lvml_debug_mp(size_t n_args, const mp_obj_t *args) {
     if (!lvgl_initialized) {
@@ -455,6 +495,7 @@ static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_rect), MP_ROM_PTR(&lvml_rect_obj) },
     { MP_ROM_QSTR(MP_QSTR_button), MP_ROM_PTR(&lvml_button_obj) },
     { MP_ROM_QSTR(MP_QSTR_textarea), MP_ROM_PTR(&lvml_textarea_obj) },
+    { MP_ROM_QSTR(MP_QSTR_show_image), MP_ROM_PTR(&lvml_show_image_obj) },
     { MP_ROM_QSTR(MP_QSTR_debug), MP_ROM_PTR(&lvml_debug_obj) },
 };
 static MP_DEFINE_CONST_DICT(lvml_module_globals, lvml_module_globals_table);

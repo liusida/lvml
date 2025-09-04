@@ -5,7 +5,11 @@
 
 #include "lvml_ui.h"
 #include "lvml_core.h"
-#include "py/mphal.h"
+#include "micropython/py/mphal.h"
+#include "lvgl/src/draw/lv_image_dsc.h"
+#include "esp_heap_caps.h"
+#include <string.h>
+
 
 /**********************
  *  STATIC VARIABLES
@@ -229,5 +233,46 @@ lvml_error_t lvml_ui_textarea(int x, int y, int width, int height, const char* p
     // Enable text input
     lv_obj_add_state(ta, LV_STATE_FOCUSED);
     
+    return LVML_OK;
+}
+
+lvml_error_t lvml_ui_show_image_data(const uint8_t* png_data, size_t data_size, int x, int y) {
+    if (!lvml_core_is_initialized()) {
+        return LVML_ERROR_INIT;
+    }
+    
+    if (png_data == NULL || data_size == 0) {
+        return LVML_ERROR_INVALID_PARAM;
+    }
+    
+    // Create image object
+    lv_obj_t* img = lv_image_create(lv_screen_active());
+    if (img == NULL) {
+        return LVML_ERROR_MEMORY;
+    }
+    
+    // Create a proper image descriptor for PNG data
+    lv_image_dsc_t *imgDesc = (lv_image_dsc_t*)malloc(sizeof(lv_image_dsc_t));
+    if (!imgDesc) {
+        mp_printf(&mp_plat_print, "Failed to allocate memory for image descriptor");
+        return LVML_ERROR_MEMORY;
+    }
+    
+    // Initialize the descriptor with PNG data
+    memset(imgDesc, 0, sizeof(lv_image_dsc_t));
+    imgDesc->data = png_data;
+    imgDesc->data_size = data_size;
+    
+    // Set the image source - this will be detected as LV_IMAGE_SRC_VARIABLE
+    lv_image_set_src(img, imgDesc);
+    
+    // Set position
+    if (x == -1 || y == -1) {
+        // Center the image
+        lv_obj_center(img);
+    } else {
+        lv_obj_set_pos(img, x, y);
+    }
+
     return LVML_OK;
 }

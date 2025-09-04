@@ -3,8 +3,9 @@
 
 # Project configuration
 PROJECT_ROOT := $(shell pwd)
-MICROPYTHON_DIR := $(PROJECT_ROOT)/third-party/micropython
-LVGL_DIR := $(PROJECT_ROOT)/third-party/lvgl
+THIRD_PARTY_ROOT := $(PROJECT_ROOT)/third-party
+MICROPYTHON_DIR := $(THIRD_PARTY_ROOT)/micropython
+LVGL_DIR := $(THIRD_PARTY_ROOT)/lvgl
 BUILD_DIR := $(PROJECT_ROOT)/build
 BOARD ?= ESP32_GENERIC_S3
 VARIANT ?= SPIRAM_OCT

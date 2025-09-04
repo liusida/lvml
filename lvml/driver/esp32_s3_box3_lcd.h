@@ -2,7 +2,7 @@
 #define ESP32_S3_BOX3_LCD_H
 
 #include "esp_err.h"
-#include "lvgl.h"
+#include "lvgl/lvgl.h"
 
 // Function declarations for ESP32-S3-Box-3 LCD driver
 esp_err_t esp32_s3_box3_lcd_init(void);

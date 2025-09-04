@@ -6,8 +6,8 @@
 #ifndef LVML_UI_H
 #define LVML_UI_H
 
-#include "py/runtime.h"
-#include "lvgl.h"
+#include "micropython/py/runtime.h"
+#include "lvgl/lvgl.h"
 #include "lvml_core.h"
 
 #ifdef __cplusplus
@@ -72,6 +72,23 @@ lvml_error_t lvml_ui_button(int x, int y, int width, int height, const char* tex
  * @return LVML_OK on success, error code on failure
  */
 lvml_error_t lvml_ui_textarea(int x, int y, int width, int height, const char* placeholder, uint32_t bg_color_hex, uint32_t text_color_hex);
+
+/**
+ * Display an image from raw PNG data
+ * @param png_data raw PNG data bytes
+ * @param data_size size of PNG data
+ * @param x x position (optional, -1 for center)
+ * @param y y position (optional, -1 for center)
+ * @return LVML_OK on success, error code on failure
+ */
+lvml_error_t lvml_ui_show_image_data(const uint8_t* png_data, size_t data_size, int x, int y);
+
+/**
+ * Clean up an image object and free its PSRAM memory
+ * @param img image object to clean up
+ * @return LVML_OK on success, error code on failure
+ */
+lvml_error_t lvml_ui_cleanup_image(lv_obj_t* img);
 
 #ifdef __cplusplus
 } /*extern "C"*/

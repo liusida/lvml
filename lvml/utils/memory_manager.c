@@ -4,7 +4,7 @@
  */
 
 #include "memory_manager.h"
-#include "py/mphal.h"
+#include "micropython/py/mphal.h"
 
 /**********************
  *  STATIC VARIABLES
