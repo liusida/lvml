@@ -13,8 +13,6 @@
 // XML parsing and processing
 #include "xml/xml_parser.h"
 
-// Network and WiFi management
-#include "network/network_manager.h"
 
 // MicroPython script execution
 #include "micropython/mp_executor.h"
@@ -41,12 +39,6 @@ lvml_error_t lvml_init_all(void);
  */
 void lvml_deinit_all(void);
 
-/**
- * Load UI from XML URL
- * @param url URL to fetch XML from
- * @return LVML_OK on success, error code on failure
- */
-lvml_error_t lvml_load_from_url(const char* url);
 
 /**
  * Load UI from XML string
@@ -55,13 +47,6 @@ lvml_error_t lvml_load_from_url(const char* url);
  */
 lvml_error_t lvml_load_from_xml(const char* xml_data);
 
-/**
- * Connect to WiFi network
- * @param ssid WiFi SSID
- * @param password WiFi password
- * @return LVML_OK on success, error code on failure
- */
-lvml_error_t lvml_connect_wifi(const char* ssid, const char* password);
 
 /**
  * Get LVML system status

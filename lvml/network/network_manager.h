@@ -88,6 +88,15 @@ wifi_status_t network_manager_get_wifi_status(void);
 lvml_error_t network_manager_http_get(const char* url, http_response_t* response);
 
 /**
+ * Send HTTP POST request with JSON data
+ * @param url URL to POST to
+ * @param json_data JSON data to send
+ * @param response Output response structure
+ * @return LVML_OK on success, error code on failure
+ */
+lvml_error_t network_manager_http_post(const char* url, const char* json_data, http_response_t* response);
+
+/**
  * Free HTTP response
  * @param response Response to free
  */

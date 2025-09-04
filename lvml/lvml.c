@@ -17,6 +17,7 @@ static bool lvml_all_initialized = false;
  **********************/
 
 lvml_error_t lvml_init_all(void) {
+    mp_printf(&mp_plat_print, "[LVML] All subsystems initializing...\n");
     if (lvml_all_initialized) {
         return LVML_OK;
     }
@@ -45,25 +46,17 @@ lvml_error_t lvml_init_all(void) {
         return result;
     }
     
-    // 4. Initialize network manager
-    result = network_manager_init();
-    if (result != LVML_OK) {
-        xml_parser_deinit();
-        lvml_core_deinit();
-        memory_manager_deinit();
-        return result;
-    }
     
-    // 5. Initialize MicroPython executor
+    // 4. Initialize MicroPython executor
     result = mp_executor_init();
     if (result != LVML_OK) {
-        network_manager_deinit();
         xml_parser_deinit();
         lvml_core_deinit();
         memory_manager_deinit();
         return result;
     }
     
+    mp_printf(&mp_plat_print, "[LVML] All subsystems initialized\n");
     lvml_all_initialized = true;
     
     return LVML_OK;
@@ -76,7 +69,6 @@ void lvml_deinit_all(void) {
     
     // Deinitialize in reverse order
     mp_executor_deinit();
-    network_manager_deinit();
     xml_parser_deinit();
     lvml_core_deinit();
     memory_manager_deinit();
@@ -84,40 +76,7 @@ void lvml_deinit_all(void) {
     lvml_all_initialized = false;
 }
 
-lvml_error_t lvml_load_from_url(const char* url) {
-    if (!lvml_all_initialized) {
-        return LVML_ERROR_INIT;
-    }
-    
-    if (url == NULL) {
-        return LVML_ERROR_INVALID_PARAM;
-    }
-    
-    // Check if WiFi is connected
-    if (network_manager_get_wifi_status() != WIFI_STATUS_CONNECTED) {
-        return LVML_ERROR_NETWORK;
-    }
-    
-    // Fetch XML from URL
-    http_response_t response;
-    lvml_error_t result = network_manager_http_get(url, &response);
-    if (result != LVML_OK) {
-        return result;
-    }
-    
-    if (response.status_code != 200) {
-        network_manager_free_response(&response);
-        return LVML_ERROR_NETWORK;
-    }
-    
-    // Load UI from XML
-    result = lvml_load_from_xml(response.content);
-    
-    // Free response
-    network_manager_free_response(&response);
-    
-    return result;
-}
+
 
 lvml_error_t lvml_load_from_xml(const char* xml_data) {
     if (!lvml_all_initialized) {
@@ -153,17 +112,9 @@ lvml_error_t lvml_load_from_xml(const char* xml_data) {
     return result;
 }
 
-lvml_error_t lvml_connect_wifi(const char* ssid, const char* password) {
-    if (!lvml_all_initialized) {
-        return LVML_ERROR_INIT;
-    }
-    
-    if (ssid == NULL) {
-        return LVML_ERROR_INVALID_PARAM;
-    }
-    
-    return network_manager_connect_wifi(ssid, password);
-}
+
+
+
 
 bool lvml_is_ready(void) {
     return lvml_all_initialized && 

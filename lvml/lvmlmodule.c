@@ -6,7 +6,6 @@
 //      lvml.textarea() - Create text areas
 //      lvml.tick() - Process LVGL timers (call periodically)
 //      lvml.debug() - Debug system and test display
-// Network: lvml.connect_wifi() - Connect to WiFi
 //          lvml.load_from_url() - Load UI from URL
 //          lvml.load_from_xml() - Load UI from XML data
 // Info: lvml.is_ready() - Check if LVML is ready
@@ -129,23 +128,6 @@ static mp_obj_t lvml_deinit(void) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(lvml_deinit_obj, lvml_deinit);
 
-// New function to load UI from URL
-static mp_obj_t lvml_load_from_url_mp(mp_obj_t url_obj) {
-    if (!lvgl_initialized) {
-        mp_raise_msg(&mp_type_RuntimeError, "LVML not initialized. Call lvml.init() first.");
-    }
-    
-    const char* url = mp_obj_str_get_str(url_obj);
-    
-    lvml_error_t result = lvml_load_from_url(url);
-    if (result != LVML_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to load UI from URL");
-    }
-    
-    return mp_const_none;
-}
-static MP_DEFINE_CONST_FUN_OBJ_1(lvml_load_from_url_obj, lvml_load_from_url_mp);
-
 // New function to load UI from XML string
 static mp_obj_t lvml_load_from_xml_mp(mp_obj_t xml_obj) {
     if (!lvgl_initialized) {
@@ -163,23 +145,8 @@ static mp_obj_t lvml_load_from_xml_mp(mp_obj_t xml_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(lvml_load_from_xml_obj, lvml_load_from_xml_mp);
 
-// New function to connect to WiFi
-static mp_obj_t lvml_connect_wifi_mp(mp_obj_t ssid_obj, mp_obj_t password_obj) {
-    if (!lvgl_initialized) {
-        mp_raise_msg(&mp_type_RuntimeError, "LVML not initialized. Call lvml.init() first.");
-    }
-    
-    const char* ssid = mp_obj_str_get_str(ssid_obj);
-    const char* password = mp_obj_str_get_str(password_obj);
-    
-    lvml_error_t result = lvml_connect_wifi(ssid, password);
-    if (result != LVML_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to connect to WiFi");
-    }
-    
-    return mp_const_none;
-}
-static MP_DEFINE_CONST_FUN_OBJ_2(lvml_connect_wifi_obj, lvml_connect_wifi_mp);
+
+
 
 // New function to get LVML status
 static mp_obj_t lvml_is_ready_mp(void) {
@@ -487,9 +454,7 @@ static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_set_rotation), MP_ROM_PTR(&lvml_set_rotation_obj) },
     { MP_ROM_QSTR(MP_QSTR_is_initialized), MP_ROM_PTR(&lvml_is_initialized_obj) },
     { MP_ROM_QSTR(MP_QSTR_tick), MP_ROM_PTR(&lvml_tick_obj) },
-    { MP_ROM_QSTR(MP_QSTR_load_from_url), MP_ROM_PTR(&lvml_load_from_url_obj) },
     { MP_ROM_QSTR(MP_QSTR_load_from_xml), MP_ROM_PTR(&lvml_load_from_xml_obj) },
-    { MP_ROM_QSTR(MP_QSTR_connect_wifi), MP_ROM_PTR(&lvml_connect_wifi_obj) },
     { MP_ROM_QSTR(MP_QSTR_is_ready), MP_ROM_PTR(&lvml_is_ready_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_version), MP_ROM_PTR(&lvml_get_version_obj) },
     { MP_ROM_QSTR(MP_QSTR_rect), MP_ROM_PTR(&lvml_rect_obj) },
