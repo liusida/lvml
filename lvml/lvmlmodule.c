@@ -2,6 +2,8 @@
 // Core: lvml.init() - Initialize LVML system
 //      lvml.set_bg() - Set background color  
 //      lvml.rect() - Draw rectangles
+//      lvml.button() - Create buttons
+//      lvml.textarea() - Create text areas
 //      lvml.tick() - Process LVGL timers (call periodically)
 //      lvml.debug() - Debug system and test display
 // Network: lvml.connect_wifi() - Connect to WiFi
@@ -9,8 +11,6 @@
 //          lvml.load_from_xml() - Load UI from XML data
 // Info: lvml.is_ready() - Check if LVML is ready
 //       lvml.get_version() - Get LVML version
-//       lvml.memory_info() - Show memory information
-//       lvml.hello() - Simple hello function
 
 #include "py/runtime.h"
 #include "py/mphal.h"
@@ -19,15 +19,9 @@
 
 static bool lvgl_initialized = false;
 
-static mp_obj_t lvml_hello(void) {
-    mp_printf(&mp_plat_print, "hello from lvml\n");
-    return mp_const_none;
-}
-static MP_DEFINE_CONST_FUN_OBJ_0(lvml_hello_obj, lvml_hello);
 
 static mp_obj_t lvml_init(void) {
     if (lvgl_initialized) {
-        mp_printf(&mp_plat_print, "LVML already initialized\n");
         return mp_const_none;
     }
     
@@ -38,7 +32,6 @@ static mp_obj_t lvml_init(void) {
     }
     
     lvgl_initialized = true;
-    mp_printf(&mp_plat_print, "LVML initialization complete\n");
     
     return mp_const_none;
 }
@@ -82,15 +75,6 @@ static mp_obj_t lvml_is_initialized(void) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(lvml_is_initialized_obj, lvml_is_initialized);
 
-static mp_obj_t lvml_memory_info(void) {
-    lvml_error_t result = lvml_core_print_memory_info();
-    if (result != LVML_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to get memory information");
-    }
-    
-    return mp_const_none;
-}
-static MP_DEFINE_CONST_FUN_OBJ_0(lvml_memory_info_obj, lvml_memory_info);
 
 static mp_obj_t lvml_tick(void) {
     if (!lvgl_initialized) {
@@ -130,7 +114,6 @@ static MP_DEFINE_CONST_FUN_OBJ_1(lvml_set_rotation_obj, lvml_set_rotation);
 
 static mp_obj_t lvml_deinit(void) {
     if (!lvgl_initialized) {
-        mp_printf(&mp_plat_print, "LVML not initialized\n");
         return mp_const_none;
     }
     
@@ -141,7 +124,6 @@ static mp_obj_t lvml_deinit(void) {
     }
     
     lvgl_initialized = false;
-    mp_printf(&mp_plat_print, "LVML deinitialized\n");
     
     return mp_const_none;
 }
@@ -154,7 +136,6 @@ static mp_obj_t lvml_load_from_url_mp(mp_obj_t url_obj) {
     }
     
     const char* url = mp_obj_str_get_str(url_obj);
-    mp_printf(&mp_plat_print, "Loading UI from URL: %s\n", url);
     
     lvml_error_t result = lvml_load_from_url(url);
     if (result != LVML_OK) {
@@ -172,7 +153,6 @@ static mp_obj_t lvml_load_from_xml_mp(mp_obj_t xml_obj) {
     }
     
     const char* xml_data = mp_obj_str_get_str(xml_obj);
-    mp_printf(&mp_plat_print, "Loading UI from XML data\n");
     
     lvml_error_t result = lvml_load_from_xml(xml_data);
     if (result != LVML_OK) {
@@ -191,8 +171,6 @@ static mp_obj_t lvml_connect_wifi_mp(mp_obj_t ssid_obj, mp_obj_t password_obj) {
     
     const char* ssid = mp_obj_str_get_str(ssid_obj);
     const char* password = mp_obj_str_get_str(password_obj);
-    
-    mp_printf(&mp_plat_print, "Connecting to WiFi: %s\n", ssid);
     
     lvml_error_t result = lvml_connect_wifi(ssid, password);
     if (result != LVML_OK) {
@@ -284,68 +262,184 @@ static mp_obj_t lvml_rect_mp(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(lvml_rect_obj, 7, 7, lvml_rect_mp);
 
+// New function to create a button
+static mp_obj_t lvml_button_mp(size_t n_args, const mp_obj_t *args) {
+    if (!lvgl_initialized) {
+        mp_raise_msg(&mp_type_RuntimeError, "LVGL not initialized. Call lvml.init() first.");
+    }
+    
+    // Validate argument count
+    if (n_args != 7) {
+        mp_raise_msg(&mp_type_TypeError, "button() takes exactly 7 arguments");
+    }
+    
+    // Get parameters
+    int x = mp_obj_get_int(args[0]);
+    int y = mp_obj_get_int(args[1]);
+    int width = mp_obj_get_int(args[2]);
+    int height = mp_obj_get_int(args[3]);
+    const char* text = mp_obj_str_get_str(args[4]);
+    
+    // Parse background color
+    uint32_t bg_color_hex = 0x000000; // Default to black
+    lvml_error_t result;
+    
+    if (mp_obj_is_str(args[5])) {
+        const char *color_str = mp_obj_str_get_str(args[5]);
+        result = lvml_ui_parse_color(color_str, 0, &bg_color_hex);
+    } else if (mp_obj_is_int(args[5])) {
+        int color_int = mp_obj_get_int(args[5]);
+        result = lvml_ui_parse_color(NULL, color_int, &bg_color_hex);
+    } else {
+        mp_raise_msg(&mp_type_ValueError, "Background color must be a string (hex or name) or integer");
+        return mp_const_none;
+    }
+    
+    if (result != LVML_OK) {
+        mp_raise_msg(&mp_type_ValueError, "Invalid background color format");
+    }
+    
+    // Parse text color
+    uint32_t text_color_hex = 0xFFFFFF; // Default to white
+    if (mp_obj_is_str(args[6])) {
+        const char *color_str = mp_obj_str_get_str(args[6]);
+        result = lvml_ui_parse_color(color_str, 0, &text_color_hex);
+    } else if (mp_obj_is_int(args[6])) {
+        int color_int = mp_obj_get_int(args[6]);
+        result = lvml_ui_parse_color(NULL, color_int, &text_color_hex);
+    } else {
+        mp_raise_msg(&mp_type_ValueError, "Text color must be a string (hex or name) or integer");
+        return mp_const_none;
+    }
+    
+    if (result != LVML_OK) {
+        mp_raise_msg(&mp_type_ValueError, "Invalid text color format");
+    }
+    
+    // Create button
+    result = lvml_ui_button(x, y, width, height, text, bg_color_hex, text_color_hex);
+    if (result != LVML_OK) {
+        if (result == LVML_ERROR_INVALID_PARAM) {
+            mp_raise_msg(&mp_type_ValueError, "Invalid button parameters");
+        } else {
+            mp_raise_msg(&mp_type_RuntimeError, "Failed to create button");
+        }
+    }
+    
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(lvml_button_obj, 7, 7, lvml_button_mp);
+
+// New function to create a text area
+static mp_obj_t lvml_textarea_mp(size_t n_args, const mp_obj_t *args) {
+    if (!lvgl_initialized) {
+        mp_raise_msg(&mp_type_RuntimeError, "LVGL not initialized. Call lvml.init() first.");
+    }
+    
+    // Validate argument count
+    if (n_args != 7) {
+        mp_raise_msg(&mp_type_TypeError, "textarea() takes exactly 7 arguments");
+    }
+    
+    // Get parameters
+    int x = mp_obj_get_int(args[0]);
+    int y = mp_obj_get_int(args[1]);
+    int width = mp_obj_get_int(args[2]);
+    int height = mp_obj_get_int(args[3]);
+    const char* placeholder = mp_obj_str_get_str(args[4]);
+    
+    // Parse background color
+    uint32_t bg_color_hex = 0xFFFFFF; // Default to white
+    lvml_error_t result;
+    
+    if (mp_obj_is_str(args[5])) {
+        const char *color_str = mp_obj_str_get_str(args[5]);
+        result = lvml_ui_parse_color(color_str, 0, &bg_color_hex);
+    } else if (mp_obj_is_int(args[5])) {
+        int color_int = mp_obj_get_int(args[5]);
+        result = lvml_ui_parse_color(NULL, color_int, &bg_color_hex);
+    } else {
+        mp_raise_msg(&mp_type_ValueError, "Background color must be a string (hex or name) or integer");
+        return mp_const_none;
+    }
+    
+    if (result != LVML_OK) {
+        mp_raise_msg(&mp_type_ValueError, "Invalid background color format");
+    }
+    
+    // Parse text color
+    uint32_t text_color_hex = 0x000000; // Default to black
+    if (mp_obj_is_str(args[6])) {
+        const char *color_str = mp_obj_str_get_str(args[6]);
+        result = lvml_ui_parse_color(color_str, 0, &text_color_hex);
+    } else if (mp_obj_is_int(args[6])) {
+        int color_int = mp_obj_get_int(args[6]);
+        result = lvml_ui_parse_color(NULL, color_int, &text_color_hex);
+    } else {
+        mp_raise_msg(&mp_type_ValueError, "Text color must be a string (hex or name) or integer");
+        return mp_const_none;
+    }
+    
+    if (result != LVML_OK) {
+        mp_raise_msg(&mp_type_ValueError, "Invalid text color format");
+    }
+    
+    // Create text area
+    result = lvml_ui_textarea(x, y, width, height, placeholder, bg_color_hex, text_color_hex);
+    if (result != LVML_OK) {
+        if (result == LVML_ERROR_INVALID_PARAM) {
+            mp_raise_msg(&mp_type_ValueError, "Invalid text area parameters");
+        } else {
+            mp_raise_msg(&mp_type_RuntimeError, "Failed to create text area");
+        }
+    }
+    
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(lvml_textarea_obj, 7, 7, lvml_textarea_mp);
+
 // Consolidated debug function
 static mp_obj_t lvml_debug_mp(size_t n_args, const mp_obj_t *args) {
     if (!lvgl_initialized) {
         mp_raise_msg(&mp_type_RuntimeError, "LVML not initialized. Call lvml.init() first.");
     }
     
-    mp_printf(&mp_plat_print, "=== LVML Debug Information ===\n");
-    
     // Print memory info
-    mp_printf(&mp_plat_print, "1. Memory Information:\n");
     lvml_core_print_memory_info();
     
     // Print refresh info
-    mp_printf(&mp_plat_print, "\n2. Display Refresh Information:\n");
     lvml_core_print_refresh_info();
     
     // Test display if requested
     if (n_args > 0 && mp_obj_is_true(args[0])) {
-        mp_printf(&mp_plat_print, "\n3. Testing Display:\n");
-        
         // Set white background
         lvml_error_t result = lvml_ui_set_background(0xFFFFFF);
         if (result != LVML_OK) {
-            mp_printf(&mp_plat_print, "   ✗ Failed to set background\n");
-        } else {
-            mp_printf(&mp_plat_print, "   ✓ White background set\n");
+            mp_printf(&mp_plat_print, "Failed to set background\n");
         }
         
         // Create test rectangles
         result = lvml_ui_rect(50, 50, 100, 100, 0xFF0000, 0x000000, 0);  // Red
         if (result != LVML_OK) {
-            mp_printf(&mp_plat_print, "   ✗ Failed to create red rectangle\n");
-        } else {
-            mp_printf(&mp_plat_print, "   ✓ Red rectangle created\n");
+            mp_printf(&mp_plat_print, "Failed to create red rectangle\n");
         }
         
         result = lvml_ui_rect(200, 50, 100, 100, 0x0000FF, 0x000000, 0);  // Blue
         if (result != LVML_OK) {
-            mp_printf(&mp_plat_print, "   ✗ Failed to create blue rectangle\n");
-        } else {
-            mp_printf(&mp_plat_print, "   ✓ Blue rectangle created\n");
+            mp_printf(&mp_plat_print, "Failed to create blue rectangle\n");
         }
         
         result = lvml_ui_rect(50, 200, 100, 100, 0x00FF00, 0x000000, 0);  // Green
         if (result != LVML_OK) {
-            mp_printf(&mp_plat_print, "   ✗ Failed to create green rectangle\n");
-        } else {
-            mp_printf(&mp_plat_print, "   ✓ Green rectangle created\n");
+            mp_printf(&mp_plat_print, "Failed to create green rectangle\n");
         }
         
         // Force refresh
         result = lvml_core_refresh_now();
         if (result != LVML_OK) {
-            mp_printf(&mp_plat_print, "   ✗ Failed to refresh display\n");
-        } else {
-            mp_printf(&mp_plat_print, "   ✓ Display refreshed\n");
+            mp_printf(&mp_plat_print, "Failed to refresh display\n");
         }
-        
-        mp_printf(&mp_plat_print, "   Display test complete - check for colored rectangles\n");
     }
-    
-    mp_printf(&mp_plat_print, "==============================\n");
     
     return mp_const_none;
 }
@@ -353,13 +447,11 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(lvml_debug_obj, 0, 1, lvml_debug_mp);
 
 static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_lvml) },
-    { MP_ROM_QSTR(MP_QSTR_hello), MP_ROM_PTR(&lvml_hello_obj) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&lvml_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&lvml_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_bg), MP_ROM_PTR(&lvml_set_bg_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_rotation), MP_ROM_PTR(&lvml_set_rotation_obj) },
     { MP_ROM_QSTR(MP_QSTR_is_initialized), MP_ROM_PTR(&lvml_is_initialized_obj) },
-    { MP_ROM_QSTR(MP_QSTR_memory_info), MP_ROM_PTR(&lvml_memory_info_obj) },
     { MP_ROM_QSTR(MP_QSTR_tick), MP_ROM_PTR(&lvml_tick_obj) },
     { MP_ROM_QSTR(MP_QSTR_load_from_url), MP_ROM_PTR(&lvml_load_from_url_obj) },
     { MP_ROM_QSTR(MP_QSTR_load_from_xml), MP_ROM_PTR(&lvml_load_from_xml_obj) },
@@ -367,6 +459,8 @@ static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_is_ready), MP_ROM_PTR(&lvml_is_ready_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_version), MP_ROM_PTR(&lvml_get_version_obj) },
     { MP_ROM_QSTR(MP_QSTR_rect), MP_ROM_PTR(&lvml_rect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_button), MP_ROM_PTR(&lvml_button_obj) },
+    { MP_ROM_QSTR(MP_QSTR_textarea), MP_ROM_PTR(&lvml_textarea_obj) },
     { MP_ROM_QSTR(MP_QSTR_debug), MP_ROM_PTR(&lvml_debug_obj) },
 };
 static MP_DEFINE_CONST_DICT(lvml_module_globals, lvml_module_globals_table);

@@ -34,32 +34,24 @@ static lv_color_t *display_buf2 = NULL;
 
 lvml_error_t lvml_core_init(void) {
     if (lvml_initialized) {
-        mp_printf(&mp_plat_print, "[LVML] Already initialized\n");
         return LVML_OK;
     }
-    
-    mp_printf(&mp_plat_print, "[LVML] Initializing core system v%s with display...\n", LVML_VERSION);
     
     // Initialize LVGL
     lv_init();
     
     // Set up custom delay function to avoid LVGL tick dependency
     lv_delay_set_cb(custom_delay_ms);
-    mp_printf(&mp_plat_print, "[LVML] Custom delay callback set up\n");
     
     // Initialize ESP-IDF LCD driver for ESP32-S3-Box-3
     esp_err_t ret = esp32_s3_box3_lcd_init();
     if (ret != ESP_OK) {
-        mp_printf(&mp_plat_print, "[LVML] ERROR: ESP32-S3-Box-3 LCD initialization failed\n");
+        mp_printf(&mp_plat_print, "[LVML] LCD initialization failed\n");
         return LVML_ERROR_INIT;
     }
     
     // Check PSRAM availability
     size_t psram_size = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
-    size_t internal_size = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
-    mp_printf(&mp_plat_print, "[LVML] Memory: PSRAM=%d bytes, Internal=%d bytes\n", psram_size, internal_size);
-    
-    // Core LVML initialization complete - other subsystems will be initialized by lvml_init_all()
     
     // Set up display buffer (you may need to adjust this for your hardware)
     // Require PSRAM for display buffers; do not fall back to internal RAM
@@ -67,7 +59,7 @@ lvml_error_t lvml_core_init(void) {
     size_t buffer_size = 320 * BUF_ROWS * sizeof(lv_color_t);
 
     if (psram_size == 0) {
-        mp_printf(&mp_plat_print, "[LVML] ERROR: PSRAM not available. Cannot allocate display buffers.\n");
+        mp_printf(&mp_plat_print, "[LVML] PSRAM not available\n");
         lvml_deinit_all();
         esp32_s3_box3_lcd_deinit();
         return LVML_ERROR_MEMORY;
@@ -83,16 +75,15 @@ lvml_error_t lvml_core_init(void) {
         if (display_buf2) heap_caps_free(display_buf2);
         display_buf1 = NULL;
         display_buf2 = NULL;
-        mp_printf(&mp_plat_print, "[LVML] ERROR: Failed to allocate display buffers in PSRAM (size=%d bytes each).\n", (int)buffer_size);
+        mp_printf(&mp_plat_print, "[LVML] Failed to allocate display buffers\n");
         esp32_s3_box3_lcd_deinit();
         return LVML_ERROR_MEMORY;
     }
-    mp_printf(&mp_plat_print, "[LVML] Display buffers allocated in PSRAM (%d bytes each)\n", (int)buffer_size);
     
     // Create ESP-IDF LCD display
     lv_display_t *disp = esp32_s3_box3_lcd_create_display(320, 240);
     if (disp == NULL) {
-        mp_printf(&mp_plat_print, "[LVML] ERROR: ESP32-S3-Box-3 LCD display creation failed!\n");
+        mp_printf(&mp_plat_print, "[LVML] LCD display creation failed\n");
         heap_caps_free(display_buf1);
         heap_caps_free(display_buf2);
         display_buf1 = NULL;
@@ -104,13 +95,7 @@ lvml_error_t lvml_core_init(void) {
     // Set up display buffers
     lv_display_set_buffers(disp, display_buf1, display_buf2, buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
     
-    mp_printf(&mp_plat_print, "[LVML] ESP32-S3-Box-3 LCD display created successfully!\n");
-    
-    // Manual ticking required - LVGL FreeRTOS integration disabled due to compilation issues
-    mp_printf(&mp_plat_print, "[LVML] Manual ticking required - call lvml.tick() periodically\n");
-    
     lvml_initialized = true;
-    mp_printf(&mp_plat_print, "[LVML] Initialization complete - automatic ticking enabled\n");
     
     return LVML_OK;
 }
@@ -196,11 +181,8 @@ lvml_error_t lvml_core_set_rotation(int rotation) {
 
 lvml_error_t lvml_core_deinit(void) {
     if (!lvml_initialized) {
-        mp_printf(&mp_plat_print, "[LVML] Core system not initialized\n");
         return LVML_ERROR_INIT;
     }
-    
-    mp_printf(&mp_plat_print, "[LVML] Deinitializing core system\n");
     
     // Free display buffers
     if (display_buf1 != NULL) {
@@ -211,39 +193,29 @@ lvml_error_t lvml_core_deinit(void) {
         heap_caps_free(display_buf2);
         display_buf2 = NULL;
     }
-    mp_printf(&mp_plat_print, "[LVML] Display buffers freed\n");
     
     // Deinitialize ESP-IDF LCD driver
     esp32_s3_box3_lcd_deinit();
-    mp_printf(&mp_plat_print, "[LVML] ESP-IDF LCD driver deinitialized\n");
     
     lvml_initialized = false;
-    mp_printf(&mp_plat_print, "[LVML] Core system deinitialized successfully\n");
     
     return LVML_OK;
 }
 
 lvml_error_t lvml_core_tick(void) {
     if (!lvml_initialized) {
-        mp_printf(&mp_plat_print, "[LVML] Core system not initialized\n");
         return LVML_ERROR_INIT;
     }
-    
-    // Note: This function is now optional since LVGL FreeRTOS integration handles automatic ticking
-    // LVGL will manage its own timing and refresh internally
-    // This function can still be called for manual control if needed
     
     // Process LVGL tick and timer handler
     lv_tick_inc(1);
     lv_timer_handler();
-    // lv_display_refr_timer(NULL);
     
     return LVML_OK;
 }
 
 lvml_error_t lvml_core_refresh_now(void) {
     if (!lvml_initialized) {
-        mp_printf(&mp_plat_print, "[LVML] Core system not initialized\n");
         return LVML_ERROR_INIT;
     }
     
@@ -255,25 +227,17 @@ lvml_error_t lvml_core_refresh_now(void) {
 
 lvml_error_t lvml_core_print_refresh_info(void) {
     if (!lvml_initialized) {
-        mp_printf(&mp_plat_print, "[LVML] Core system not initialized\n");
         return LVML_ERROR_INIT;
     }
     
     lv_display_t *disp = lv_display_get_default();
     if (disp == NULL) {
-        mp_printf(&mp_plat_print, "[LVML] No default display found\n");
         return LVML_ERROR_INIT;
     }
     
-    mp_printf(&mp_plat_print, "=== Display Refresh Information ===\n");
-    mp_printf(&mp_plat_print, "Display resolution: %dx%d\n", 
+    mp_printf(&mp_plat_print, "Display: %dx%d, Manual tick required\n", 
               lv_display_get_horizontal_resolution(disp), 
               lv_display_get_vertical_resolution(disp));
-    mp_printf(&mp_plat_print, "Refresh timer: %s\n", 
-              lv_display_get_refr_timer(disp) ? "ENABLED" : "DISABLED");
-    mp_printf(&mp_plat_print, "LVGL FreeRTOS integration: DISABLED (compilation error)\n");
-    mp_printf(&mp_plat_print, "Refresh rate: Manual (call lvml.tick() periodically)\n");
-    mp_printf(&mp_plat_print, "=====================================\n");
     
     return LVML_OK;
 }

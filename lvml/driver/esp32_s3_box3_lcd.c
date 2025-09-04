@@ -3,7 +3,6 @@
 #include "py/mphal.h"
 #include "py/runtime.h"
 #include "src/drivers/display/ili9341/lv_ili9341.h"
-#include "src/drivers/display/lcd/lv_lcd_generic_mipi.h"
 #include "src/tick/lv_tick.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
@@ -35,10 +34,7 @@ static void ili9341_send_cmd(uint8_t cmd) {
         .length = 8,
         .tx_buffer = &cmd,
     };
-    esp_err_t ret = spi_device_transmit(spi_device, &trans);
-    if (ret != ESP_OK) {
-        mp_printf(&mp_plat_print, "ERROR: SPI command 0x%02X failed, ret=%d\n", cmd, ret);
-    }
+    spi_device_transmit(spi_device, &trans);
 }
 
 // Helper function to send data to ILI9341
@@ -50,19 +46,13 @@ static void ili9341_send_data(uint8_t *data, size_t len) {
         .length = len * 8,
         .tx_buffer = data,
     };
-    esp_err_t ret = spi_device_transmit(spi_device, &trans);
-    if (ret != ESP_OK) {
-        mp_printf(&mp_plat_print, "ERROR: SPI data send failed, len=%d, ret=%d\n", len, ret);
-    }
+    spi_device_transmit(spi_device, &trans);
 }
 
 // LVGL callback function to send commands to ILI9341
 static void ili9341_send_cmd_cb(lv_display_t * disp, const uint8_t * cmd, size_t cmd_size, 
                                const uint8_t * param, size_t param_size) {
-    if (spi_device == NULL) {
-        mp_printf(&mp_plat_print, "ERROR: SPI device not initialized in command callback\n");
-        return;
-    }
+    if (spi_device == NULL) return;
     
     // Send command
     if (cmd_size > 0) {
@@ -79,7 +69,6 @@ static void ili9341_send_cmd_cb(lv_display_t * disp, const uint8_t * cmd, size_t
 static void ili9341_send_color_cb(lv_display_t * disp, const uint8_t * cmd, size_t cmd_size,
                                  uint8_t * param, size_t param_size) {
     if (spi_device == NULL) {
-        mp_printf(&mp_plat_print, "ERROR: SPI device not initialized in color callback\n");
         lv_display_flush_ready(disp);
         return;
     }
@@ -106,12 +95,7 @@ static void ili9341_send_color_cb(lv_display_t * disp, const uint8_t * cmd, size
                 .tx_buffer = data_ptr,
             };
             
-            esp_err_t ret = spi_device_transmit(spi_device, &trans);
-            if (ret != ESP_OK) {
-                mp_printf(&mp_plat_print, "ERROR: SPI color transmit failed, chunk size=%d, remaining=%d, ret=%d\n", 
-                          chunk_size, remaining, ret);
-                break;
-            }
+            spi_device_transmit(spi_device, &trans);
             
             data_ptr += chunk_size;
             remaining -= chunk_size;
@@ -128,8 +112,6 @@ esp_err_t esp32_s3_box3_lcd_init(void) {
         return ESP_OK;
     }
     
-    mp_printf(&mp_plat_print, "Initializing ESP32-S3-Box-3 LCD driver...\n");
-    
     // Initialize SPI for ILI9341
     spi_bus_config_t buscfg = {
         .miso_io_num = -1, // Not used for display
@@ -143,10 +125,8 @@ esp_err_t esp32_s3_box3_lcd_init(void) {
     // Initialize SPI bus with automatic DMA channel selection
     esp_err_t ret = spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
     if (ret != ESP_OK) {
-        mp_printf(&mp_plat_print, "ERROR: SPI bus initialization failed, ret=%d\n", ret);
         return ret;
     }
-    mp_printf(&mp_plat_print, "SPI bus initialized successfully\n");
     
     spi_device_interface_config_t devcfg = {
         .clock_speed_hz = 27 * 1000 * 1000, // 27 MHz for ESP32-S3-Box-3
@@ -161,16 +141,11 @@ esp_err_t esp32_s3_box3_lcd_init(void) {
     // Add device to SPI bus
     ret = spi_bus_add_device(SPI2_HOST, &devcfg, &spi_device);
     if (ret != ESP_OK) {
-        mp_printf(&mp_plat_print, "ERROR: SPI device add failed, ret=%d\n", ret);
         spi_bus_free(SPI2_HOST);
         return ret;
     }
-    mp_printf(&mp_plat_print, "SPI device added successfully\n");
     
     // Configure control pins
-    mp_printf(&mp_plat_print, "Configuring GPIO pins: DC=%d, RST=%d, BCKL=%d\n", 
-              LCD_PIN_NUM_DC, LCD_PIN_NUM_RST, LCD_PIN_NUM_BCKL);
-    
     uint64_t pin_bit_mask = (1ULL << LCD_PIN_NUM_DC) | (1ULL << LCD_PIN_NUM_RST) | (1ULL << LCD_PIN_NUM_BCKL);
     
     gpio_config_t ctrl_conf = {
@@ -183,12 +158,10 @@ esp_err_t esp32_s3_box3_lcd_init(void) {
     
     ret = gpio_config(&ctrl_conf);
     if (ret != ESP_OK) {
-        mp_printf(&mp_plat_print, "ERROR: GPIO configuration failed, ret=%d\n", ret);
         spi_bus_remove_device(spi_device);
         spi_bus_free(SPI2_HOST);
         return ret;
     }
-    mp_printf(&mp_plat_print, "GPIO pins configured successfully\n");
     
     // Reset ILI9341
     gpio_set_level(LCD_PIN_NUM_RST, 1); // High for reset
@@ -198,8 +171,6 @@ esp_err_t esp32_s3_box3_lcd_init(void) {
     
     // Turn on backlight
     gpio_set_level(LCD_PIN_NUM_BCKL, 1);
-    
-    mp_printf(&mp_plat_print, "ESP32-S3-Box-3 LCD driver initialized successfully\n");
     
     lcd_initialized = true;
     return ESP_OK;
@@ -213,7 +184,6 @@ void esp32_s3_box3_lcd_deinit(void) {
     }
     spi_bus_free(SPI2_HOST);
     lcd_initialized = false;
-    mp_printf(&mp_plat_print, "ESP32-S3-Box-3 LCD driver deinitialized\n");
 }
 
 // Set display rotation
@@ -252,117 +222,26 @@ esp_err_t esp32_s3_box3_lcd_set_rotation(lv_display_rotation_t rotation) {
     }
     
     // Send MADCTL command (0x36) with rotation value
-    mp_printf(&mp_plat_print, "Sending MADCTL command 0x36 with value 0x%02X...\n", madctl_value);
     ili9341_send_cmd(0x36);  // MADCTL command
     ili9341_send_data(&madctl_value, 1);  // Send the rotation value
     
-    mp_printf(&mp_plat_print, "Display rotation set to %d degrees (MADCTL=0x%02X)\n", 
-              rotation * 90, madctl_value);
-    
     return ESP_OK;
 }
 
-// Test function to try different MADCTL values
-esp_err_t esp32_s3_box3_lcd_test_rotation(uint8_t madctl_value) {
-    if (!lcd_initialized || spi_device == NULL) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    
-    mp_printf(&mp_plat_print, "Testing MADCTL value 0x%02X...\n", madctl_value);
-    
-    // Send MADCTL command (0x36) with test value
-    ili9341_send_cmd(0x36);  // MADCTL command
-    ili9341_send_data(&madctl_value, 1);  // Send the test value
-    
-    mp_printf(&mp_plat_print, "MADCTL test value 0x%02X sent\n", madctl_value);
-    
-    return ESP_OK;
-}
 
-// Test function to verify LVGL memory allocation works
-static lv_display_t * test_lvgl_memory_allocation(uint32_t width, uint32_t height) {
-    mp_printf(&mp_plat_print, "Testing LVGL memory allocation...\n");
-    
-    // Test basic LVGL display creation first
-    mp_printf(&mp_plat_print, "Creating basic LVGL display...\n");
-    lv_display_t *disp = lv_display_create(width, height);
-    if (disp == NULL) {
-        mp_printf(&mp_plat_print, "ERROR: Basic LVGL display creation failed!\n");
-        return NULL;
-    }
-    mp_printf(&mp_plat_print, "Basic LVGL display created successfully!\n");
-    
-    // Test LVGL memory allocation
-    mp_printf(&mp_plat_print, "Testing lv_malloc...\n");
-    void *test_mem = lv_malloc(1024);
-    if (test_mem == NULL) {
-        mp_printf(&mp_plat_print, "ERROR: lv_malloc failed!\n");
-        lv_display_delete(disp);
-        return NULL;
-    }
-    mp_printf(&mp_plat_print, "lv_malloc successful, freeing test memory...\n");
-    lv_free(test_mem);
-    
-    // Clean up test display
-    lv_display_delete(disp);
-    mp_printf(&mp_plat_print, "LVGL memory allocation test passed!\n");
-    
-    return NULL; // Return NULL since we cleaned up the test display
-}
 
-// Test function to verify lv_lcd_generic_mipi_create works
-static lv_display_t * test_generic_mipi_create(uint32_t width, uint32_t height) {
-    mp_printf(&mp_plat_print, "Testing lv_lcd_generic_mipi_create (%dx%d)...\n", width, height);
-    
-    // Test the generic MIPI create function directly
-    mp_printf(&mp_plat_print, "[DEBUG] About to call lv_lcd_generic_mipi_create\n");
-    lv_display_t *disp = lv_lcd_generic_mipi_create(width, height, LV_LCD_FLAG_NONE, 
-                                                   ili9341_send_cmd_cb, ili9341_send_color_cb);
-    mp_printf(&mp_plat_print, "[DEBUG] lv_lcd_generic_mipi_create returned\n");
-    
-    if (disp == NULL) {
-        mp_printf(&mp_plat_print, "ERROR: Generic MIPI display creation failed!\n");
-        return NULL;
-    }
-    
-    mp_printf(&mp_plat_print, "Generic MIPI display created successfully!\n");
-    return disp;
-}
 
 // Create LVGL display with ESP32-S3-Box-3 LCD driver
 lv_display_t * esp32_s3_box3_lcd_create_display(uint32_t width, uint32_t height) {
-    mp_printf(&mp_plat_print, "Creating ESP32-S3-Box-3 LCD display (%dx%d)...\n", width, height);
-    
-    // First test LVGL memory allocation
-    test_lvgl_memory_allocation(width, height);
-    
-    // Then test the generic MIPI driver
-    lv_display_t *disp = test_generic_mipi_create(width, height);
-    if (disp == NULL) {
-        mp_printf(&mp_plat_print, "ERROR: Generic MIPI test failed!\n");
-        return NULL;
-    }
-    
-    // If generic MIPI works, try the full ILI9341 driver
-    lv_display_delete(disp); // Clean up test display
-    
-    mp_printf(&mp_plat_print, "Now trying full ILI9341 driver...\n");
-    disp = lv_ili9341_create(width, height, LV_LCD_FLAG_NONE, 
+    // Create ILI9341 display
+    lv_display_t *disp = lv_ili9341_create(width, height, LV_LCD_FLAG_NONE, 
                             ili9341_send_cmd_cb, ili9341_send_color_cb);
     if (disp == NULL) {
-        mp_printf(&mp_plat_print, "ERROR: ILI9341 display creation failed!\n");
         return NULL;
     }
     
-    mp_printf(&mp_plat_print, "ESP32-S3-Box-3 LCD display created successfully!\n");
-    
-    // Set default rotation after display is created
-    mp_printf(&mp_plat_print, "Setting default display rotation to 180 degrees...\n");
-    esp_err_t rot_ret = esp32_s3_box3_lcd_set_rotation(LV_DISPLAY_ROTATION_270);
-    if (rot_ret != ESP_OK) {
-        mp_printf(&mp_plat_print, "WARNING: Failed to set default rotation, ret=%d\n", rot_ret);
-        // Don't fail display creation for rotation issues
-    }
+    // Set default rotation
+    esp32_s3_box3_lcd_set_rotation(LV_DISPLAY_ROTATION_270);
     
     return disp;
 }

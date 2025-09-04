@@ -19,7 +19,6 @@ static lv_obj_t* static_background = NULL;
 
 lvml_error_t lvml_ui_set_background(uint32_t color_hex) {
     if (!lvml_core_is_initialized()) {
-        mp_printf(&mp_plat_print, "[LVML] Core system not initialized\n");
         return LVML_ERROR_INIT;
     }
     
@@ -31,10 +30,8 @@ lvml_error_t lvml_ui_set_background(uint32_t color_hex) {
     
     // Create background object if it doesn't exist
     if (static_background == NULL) {
-        mp_printf(&mp_plat_print, "[LVML] Creating background object...\n");
         static_background = lv_obj_create(lv_screen_active());
         if (static_background == NULL) {
-            mp_printf(&mp_plat_print, "[LVML] Failed to create background object\n");
             return LVML_ERROR_MEMORY;
         }
         
@@ -46,7 +43,6 @@ lvml_error_t lvml_ui_set_background(uint32_t color_hex) {
     
     // Update background color
     lv_obj_set_style_bg_color(static_background, lv_color, 0);
-    mp_printf(&mp_plat_print, "[LVML] Background color updated\n");
     
     return LVML_OK;
 }
@@ -93,25 +89,21 @@ lvml_error_t lvml_ui_parse_color(const char* color_str, int color_int, uint32_t*
 
 lvml_error_t lvml_ui_rect(int x, int y, int width, int height, uint32_t color_hex, uint32_t border_color_hex, int border_width) {
     if (!lvml_core_is_initialized()) {
-        mp_printf(&mp_plat_print, "[LVML] Core system not initialized\n");
         return LVML_ERROR_INIT;
     }
     
     // Validate parameters
     if (width <= 0 || height <= 0) {
-        mp_printf(&mp_plat_print, "[LVML] Invalid rectangle dimensions: width=%d, height=%d\n", width, height);
         return LVML_ERROR_INVALID_PARAM;
     }
     
     if (border_width < 0) {
-        mp_printf(&mp_plat_print, "[LVML] Invalid border width: %d\n", border_width);
         return LVML_ERROR_INVALID_PARAM;
     }
     
     // Create rectangle object
     lv_obj_t* rect = lv_obj_create(lv_screen_active());
     if (rect == NULL) {
-        mp_printf(&mp_plat_print, "[LVML] Failed to create rectangle object\n");
         return LVML_ERROR_MEMORY;
     }
     
@@ -146,8 +138,103 @@ lvml_error_t lvml_ui_rect(int x, int y, int width, int height, uint32_t color_he
     lv_obj_set_style_pad_all(rect, 0, 0);
     lv_obj_set_style_radius(rect, 0, 0); // Square corners
     
-    mp_printf(&mp_plat_print, "[LVML] Rectangle created at (%d,%d) size %dx%d color 0x%06X\n", 
-              x, y, width, height, color_hex);
+    return LVML_OK;
+}
+
+lvml_error_t lvml_ui_button(int x, int y, int width, int height, const char* text, uint32_t bg_color_hex, uint32_t text_color_hex) {
+    if (!lvml_core_is_initialized()) {
+        return LVML_ERROR_INIT;
+    }
+    
+    // Validate parameters
+    if (width <= 0 || height <= 0) {
+        return LVML_ERROR_INVALID_PARAM;
+    }
+    
+    if (text == NULL) {
+        return LVML_ERROR_INVALID_PARAM;
+    }
+    
+    // Create button object
+    lv_obj_t* btn = lv_button_create(lv_screen_active());
+    if (btn == NULL) {
+        return LVML_ERROR_MEMORY;
+    }
+    
+    // Set position and size
+    lv_obj_set_pos(btn, x, y);
+    lv_obj_set_size(btn, width, height);
+    
+    // Set background color
+    uint8_t r = (bg_color_hex >> 16) & 0xFF;
+    uint8_t g = (bg_color_hex >> 8) & 0xFF;
+    uint8_t b = bg_color_hex & 0xFF;
+    lv_color_t bg_color = lv_color_make(r, g, b);
+    lv_obj_set_style_bg_color(btn, bg_color, 0);
+    lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, 0);
+    
+    // Add text label
+    lv_obj_t* label = lv_label_create(btn);
+    if (label == NULL) {
+        lv_obj_delete(btn);
+        return LVML_ERROR_MEMORY;
+    }
+    
+    lv_label_set_text(label, text);
+    lv_obj_center(label);
+    
+    // Set text color
+    uint8_t tr = (text_color_hex >> 16) & 0xFF;
+    uint8_t tg = (text_color_hex >> 8) & 0xFF;
+    uint8_t tb = text_color_hex & 0xFF;
+    lv_color_t text_color = lv_color_make(tr, tg, tb);
+    lv_obj_set_style_text_color(label, text_color, 0);
+    
+    return LVML_OK;
+}
+
+lvml_error_t lvml_ui_textarea(int x, int y, int width, int height, const char* placeholder, uint32_t bg_color_hex, uint32_t text_color_hex) {
+    if (!lvml_core_is_initialized()) {
+        return LVML_ERROR_INIT;
+    }
+    
+    // Validate parameters
+    if (width <= 0 || height <= 0) {
+        return LVML_ERROR_INVALID_PARAM;
+    }
+    
+    // Create text area object
+    lv_obj_t* ta = lv_textarea_create(lv_screen_active());
+    if (ta == NULL) {
+        return LVML_ERROR_MEMORY;
+    }
+    
+    // Set position and size
+    lv_obj_set_pos(ta, x, y);
+    lv_obj_set_size(ta, width, height);
+    
+    // Set background color
+    uint8_t r = (bg_color_hex >> 16) & 0xFF;
+    uint8_t g = (bg_color_hex >> 8) & 0xFF;
+    uint8_t b = bg_color_hex & 0xFF;
+    lv_color_t bg_color = lv_color_make(r, g, b);
+    lv_obj_set_style_bg_color(ta, bg_color, 0);
+    lv_obj_set_style_bg_opa(ta, LV_OPA_COVER, 0);
+    
+    // Set text color
+    uint8_t tr = (text_color_hex >> 16) & 0xFF;
+    uint8_t tg = (text_color_hex >> 8) & 0xFF;
+    uint8_t tb = text_color_hex & 0xFF;
+    lv_color_t text_color = lv_color_make(tr, tg, tb);
+    lv_obj_set_style_text_color(ta, text_color, 0);
+    
+    // Set placeholder text if provided
+    if (placeholder != NULL) {
+        lv_textarea_set_placeholder_text(ta, placeholder);
+    }
+    
+    // Enable text input
+    lv_obj_add_state(ta, LV_STATE_FOCUSED);
     
     return LVML_OK;
 }
