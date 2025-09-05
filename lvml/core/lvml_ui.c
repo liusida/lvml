@@ -7,6 +7,8 @@
 #include "lvml_core.h"
 #include "micropython/py/mphal.h"
 #include "lvgl/src/draw/lv_image_dsc.h"
+#include "lvgl/src/others/xml/lv_xml.h"
+#include "lvgl/src/others/xml/lv_xml_component.h"
 #include "esp_heap_caps.h"
 #include <string.h>
 
@@ -274,5 +276,41 @@ lvml_error_t lvml_ui_show_image_data(const uint8_t* png_data, size_t data_size, 
         lv_obj_set_pos(img, x, y);
     }
 
+    return LVML_OK;
+}
+
+lvml_error_t lvml_ui_load_xml(const char* xml_content) {
+    if (!lvml_core_is_initialized()) {
+        return LVML_ERROR_INIT;
+    }
+    
+    if (xml_content == NULL) {
+        return LVML_ERROR_INVALID_PARAM;
+    }
+    
+    // Initialize LVGL XML system if not already done
+    static bool xml_initialized = false;
+    if (!xml_initialized) {
+        lv_xml_init();
+        xml_initialized = true;
+    }
+    
+    // Register the XML component from data
+    lv_result_t result = lv_xml_component_register_from_data("wifi_settings", xml_content);
+    if (result != LV_RESULT_OK) {
+        mp_printf(&mp_plat_print, "Failed to register XML component: %d\n", result);
+        return LVML_ERROR_XML_PARSE;
+    }
+    
+    // Create the component on the active screen
+    lv_obj_t* obj = (lv_obj_t*)lv_xml_create(lv_screen_active(), "wifi_settings", NULL);
+    if (obj == NULL) {
+        mp_printf(&mp_plat_print, "Failed to create XML component\n");
+        return LVML_ERROR_MEMORY;
+    }
+    
+    // Center the component on screen
+    lv_obj_center(obj);
+    
     return LVML_OK;
 }

@@ -1,7 +1,9 @@
 # Notes: the offset of the partition table itself is set in
 # $IDF_PATH/components/partition_table/Kconfig.projbuild.
-# Name,   Type, SubType, Offset,  Size, Flags
-nvs,      data, nvs,     0x9000,  0x6000,
-phy_init, data, phy,     0xf000,  0x1000,
-factory,  app,  factory, 0x10000, 0x300000,
-vfs,      data, fat,     0x310000, 0xCF0000,
+# Name,       Type, SubType, Offset,  Size, Flags
+nvs,          data, nvs,     0x9000,  0x6000,
+phy_init,     data, phy,     0xf000,  0x1000,
+factory,      app,  factory, 0x10000, 0x300000,
+vfs,          data, spiffs,     0x310000, 0x7D000,
+# vfs should be 0xCF0000 (13.5MB), but make it 0x7D000 (500KB) for now to make flash faster.
+# also related to scripts/create_vfs_image.sh

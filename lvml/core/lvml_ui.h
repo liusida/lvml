@@ -90,6 +90,13 @@ lvml_error_t lvml_ui_show_image_data(const uint8_t* png_data, size_t data_size, 
  */
 lvml_error_t lvml_ui_cleanup_image(lv_obj_t* img);
 
+/**
+ * Load and render UI from XML content
+ * @param xml_content XML content string
+ * @return LVML_OK on success, error code on failure
+ */
+lvml_error_t lvml_ui_load_xml(const char* xml_content);
+
 #ifdef __cplusplus
 } /*extern "C"*/
 #endif

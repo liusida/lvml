@@ -1,0 +1,22 @@
+<micropython src="index.py" />
+<screen>
+    <consts>
+        <string name="title" value="Main menu"/>
+    </consts>
+
+    <styles>
+        <style name="dark" bg_color="0x333"/>
+    </styles>
+
+    <view>
+        <my_header label="#title"/>
+        <my_main_cont>
+            <style name="dark"/>
+
+            <button text="Weather" icon="cloudy"/>
+            <button text="Messages" icon="envelope"/>
+            <button text="Settings" icon="cogwheel"/>
+            <button text="About" icon="questionmark"/>
+        </my_main_cont>
+    </view>
+</screen>

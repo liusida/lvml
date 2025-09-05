@@ -13,7 +13,7 @@
 
 #include "micropython/py/runtime.h"
 #include "micropython/py/mphal.h"
-#include "lvml.h"
+#include "core/lvml_core.h"
 #include "driver/esp32_s3_box3_lcd.h"
 
 static bool lvgl_initialized = false;
@@ -127,32 +127,6 @@ static mp_obj_t lvml_deinit(void) {
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(lvml_deinit_obj, lvml_deinit);
-
-// New function to load UI from XML string
-static mp_obj_t lvml_load_from_xml_mp(mp_obj_t xml_obj) {
-    if (!lvgl_initialized) {
-        mp_raise_msg(&mp_type_RuntimeError, "LVML not initialized. Call lvml.init() first.");
-    }
-    
-    const char* xml_data = mp_obj_str_get_str(xml_obj);
-    
-    lvml_error_t result = lvml_load_from_xml(xml_data);
-    if (result != LVML_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to load UI from XML");
-    }
-    
-    return mp_const_none;
-}
-static MP_DEFINE_CONST_FUN_OBJ_1(lvml_load_from_xml_obj, lvml_load_from_xml_mp);
-
-
-
-
-// New function to get LVML status
-static mp_obj_t lvml_is_ready_mp(void) {
-    return mp_obj_new_bool(lvml_is_ready());
-}
-static MP_DEFINE_CONST_FUN_OBJ_0(lvml_is_ready_obj, lvml_is_ready_mp);
 
 // New function to get LVML version
 static mp_obj_t lvml_get_version(void) {
@@ -446,6 +420,31 @@ static mp_obj_t lvml_debug_mp(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(lvml_debug_obj, 0, 1, lvml_debug_mp);
 
+// New function to load XML UI
+static mp_obj_t lvml_load_xml_mp(mp_obj_t xml_content_obj) {
+    if (!lvgl_initialized) {
+        mp_raise_msg(&mp_type_RuntimeError, "LVML not initialized. Call lvml.init() first.");
+    }
+    
+    // Get XML content string
+    const char* xml_content = mp_obj_str_get_str(xml_content_obj);
+    
+    // Load XML UI
+    lvml_error_t result = lvml_ui_load_xml(xml_content);
+    if (result != LVML_OK) {
+        if (result == LVML_ERROR_XML_PARSE) {
+            mp_raise_msg(&mp_type_ValueError, "Invalid XML content");
+        } else if (result == LVML_ERROR_MEMORY) {
+            mp_raise_msg(&mp_type_RuntimeError, "Failed to create UI from XML - out of memory");
+        } else {
+            mp_raise_msg(&mp_type_RuntimeError, "Failed to load XML UI");
+        }
+    }
+    
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(lvml_load_xml_obj, lvml_load_xml_mp);
+
 static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_lvml) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&lvml_init_obj) },
@@ -454,14 +453,13 @@ static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_set_rotation), MP_ROM_PTR(&lvml_set_rotation_obj) },
     { MP_ROM_QSTR(MP_QSTR_is_initialized), MP_ROM_PTR(&lvml_is_initialized_obj) },
     { MP_ROM_QSTR(MP_QSTR_tick), MP_ROM_PTR(&lvml_tick_obj) },
-    { MP_ROM_QSTR(MP_QSTR_load_from_xml), MP_ROM_PTR(&lvml_load_from_xml_obj) },
-    { MP_ROM_QSTR(MP_QSTR_is_ready), MP_ROM_PTR(&lvml_is_ready_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_version), MP_ROM_PTR(&lvml_get_version_obj) },
     { MP_ROM_QSTR(MP_QSTR_rect), MP_ROM_PTR(&lvml_rect_obj) },
     { MP_ROM_QSTR(MP_QSTR_button), MP_ROM_PTR(&lvml_button_obj) },
     { MP_ROM_QSTR(MP_QSTR_textarea), MP_ROM_PTR(&lvml_textarea_obj) },
     { MP_ROM_QSTR(MP_QSTR_show_image), MP_ROM_PTR(&lvml_show_image_obj) },
     { MP_ROM_QSTR(MP_QSTR_debug), MP_ROM_PTR(&lvml_debug_obj) },
+    { MP_ROM_QSTR(MP_QSTR_load_xml), MP_ROM_PTR(&lvml_load_xml_obj) },
 };
 static MP_DEFINE_CONST_DICT(lvml_module_globals, lvml_module_globals_table);
 

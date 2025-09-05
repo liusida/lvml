@@ -9,7 +9,6 @@
 #include "esp_heap_caps.h"
 #include "driver/esp32_s3_box3_lcd.h"
 #include "esp_timer.h"
-#include "lvml.h"
 #include "mphalport.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -63,7 +62,6 @@ lvml_error_t lvml_core_init(void) {
 
     if (psram_size == 0) {
         mp_printf(&mp_plat_print, "[LVML] PSRAM not available\n");
-        lvml_deinit_all();
         esp32_s3_box3_lcd_deinit();
         return LVML_ERROR_MEMORY;
     }

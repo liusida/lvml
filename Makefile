@@ -20,7 +20,7 @@ NC := \033[0m
 
 # Simple logging (no complex functions)
 
-.PHONY: help build clean clean-all clean-manual check-deps init-submodules init-main-submodules build-mpy-cross apply-patches
+.PHONY: help build clean clean-all clean-manual check-deps init-submodules init-main-submodules build-mpy-cross apply-patches create-vfs-prebuilt flash
 
 # Default target
 build: check-deps init-submodules apply-patches build-mpy-cross
@@ -45,6 +45,7 @@ build: check-deps init-submodules apply-patches build-mpy-cross
 help:
 	@echo "Available targets:"
 	@echo "  build         - Build firmware for specified board (default)"
+	@echo "  flash         - Build and flash firmware + VFS prebuilt to ESP32-S3"
 	@echo "  clean         - Clean build directories (requires ESP-IDF)"
 	@echo "  clean-all     - Clean all build directories (more thorough, requires ESP-IDF)"
 	@echo "  clean-manual  - Clean build directories manually (no ESP-IDF required)"
@@ -52,6 +53,7 @@ help:
 	@echo "  check-deps    - Check dependencies"
 	@echo "  init-submodules - Initialize all submodules (MicroPython + LVGL)"
 	@echo "  init-main-submodules - Initialize main project submodules only"
+	@echo "  create-vfs-prebuilt - Create VFS prebuilt filesystem image (optional)"
 	@echo ""
 	@echo "Other targets (commented out for now):"
 	@echo "  # flash, erase, monitor, deploy, build-monitor, info"
@@ -112,16 +114,37 @@ build-mpy-cross:
 	@cd $(MICROPYTHON_DIR) && make -C mpy-cross
 	@printf "$(GREEN)[SUCCESS]$(NC) mpy-cross built successfully\n"
 
+# Create VFS filesystem image (optional, no root required)
+create-vfs:
+	@printf "$(BLUE)[INFO]$(NC) Creating VFS filesystem image...\n"
+	@./scripts/create_vfs_image.sh
+
 # Build firmware using make (faster than CMake)
 # (build target moved to be the default target above)
 
 # Flash firmware using esptool (faster than idf.py)
-# flash: check-deps
-# 	@printf "$(BLUE)[INFO]$(NC) Flashing firmware to ESP32 on port $(PORT)...\n"
-# 	@cd $(MICROPYTHON_DIR)/ports/esp32 && \
-# 		export USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake && \
-# 		make BOARD=$(BOARD) VARIANT=$(VARIANT) USER_C_MODULES=$(PROJECT_ROOT)/lvml/micropython.cmake deploy PORT=$(PORT)
-# 	@printf "$(GREEN)[SUCCESS]$(NC) Firmware flashed successfully\n"
+flash: build
+	@printf "$(BLUE)[INFO]$(NC) Flashing firmware to ESP32-S3 on port $(PORT)...\n"
+	@if [ -z "$$IDF_PATH" ]; then \
+		printf "$(RED)[ERROR]$(NC) ESP-IDF not found. Please source ESP-IDF environment first:\n"; \
+		printf "$(RED)[ERROR]$(NC)   source ~/Projects/github/esp-idf/export.sh\n"; \
+		exit 1; \
+	fi
+	@if [ -f "$(BUILD_DIR)/vfs_prebuilt.img" ]; then \
+		printf "$(BLUE)[INFO]$(NC) Flashing firmware and VFS prebuilt...\n"; \
+		esptool.py --chip esp32s3 --port $(PORT) --baud 921600 write_flash \
+			--flash_mode qio --flash_freq 80m --flash_size 16MB \
+			0x0 $(BUILD_DIR)/firmware.bin \
+			0x310000 $(BUILD_DIR)/vfs_prebuilt.img; \
+		printf "$(GREEN)[SUCCESS]$(NC) Firmware and VFS prebuilt flashed successfully\n"; \
+	else \
+		printf "$(YELLOW)[WARNING]$(NC) VFS prebuilt image not found, flashing firmware only...\n"; \
+		printf "$(YELLOW)[WARNING]$(NC) Run 'make create-vfs-prebuilt' first to include vfs_prebuilt files\n"; \
+		esptool.py --chip esp32s3 --port $(PORT) --baud 921600 write_flash \
+			--flash_mode qio --flash_freq 80m --flash_size 16MB \
+			0x0 $(BUILD_DIR)/firmware.bin; \
+		printf "$(GREEN)[SUCCESS]$(NC) Firmware flashed successfully\n"; \
+	fi
 
 # Erase flash using esptool
 # erase:
