@@ -8,6 +8,7 @@
 #include "lvgl/src/tick/lv_tick.h"
 #include "esp_heap_caps.h"
 #include "driver/esp32_s3_box3_lcd.h"
+#include "driver/esp32_s3_box3_touch.h"
 #include "esp_timer.h"
 #include "mphalport.h"
 #include "freertos/FreeRTOS.h"
@@ -109,6 +110,21 @@ lvml_error_t lvml_core_init(void) {
     // Turn on screen after setting black background
     esp32_s3_box3_lcd_screen_on();
     
+    mp_printf(&mp_plat_print, "[LVML] Initializing touch controller\n");
+    // Initialize touch controller
+    esp_err_t touch_ret = esp32_s3_box3_touch_init();
+    if (touch_ret != ESP_OK) {
+        mp_printf(&mp_plat_print, "[LVML] Touch initialization failed\n");
+        // Continue without touch - display will still work
+    } else {
+        // Create touch input device
+        lv_indev_t *touch_indev = esp32_s3_box3_touch_create_indev();
+        if (touch_indev != NULL) {
+            lv_indev_set_display(touch_indev, disp);
+            mp_printf(&mp_plat_print, "[LVML] Touch input device initialized\n");
+        }
+    }
+    
     lvml_initialized = true;
     
     return LVML_OK;
@@ -207,6 +223,9 @@ lvml_error_t lvml_core_deinit(void) {
         heap_caps_free(display_buf2);
         display_buf2 = NULL;
     }
+    
+    // Deinitialize touch driver
+    esp32_s3_box3_touch_deinit();
     
     // Deinitialize ESP-IDF LCD driver
     esp32_s3_box3_lcd_deinit();

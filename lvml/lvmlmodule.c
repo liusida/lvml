@@ -15,6 +15,7 @@
 #include "micropython/py/mphal.h"
 #include "core/lvml_core.h"
 #include "driver/esp32_s3_box3_lcd.h"
+#include "driver/esp32_s3_box3_touch.h"
 
 static bool lvgl_initialized = false;
 
@@ -445,6 +446,12 @@ static mp_obj_t lvml_load_xml_mp(mp_obj_t xml_content_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(lvml_load_xml_obj, lvml_load_xml_mp);
 
+// Touch functions
+static mp_obj_t lvml_touch_enabled(void) {
+    return mp_obj_new_bool(esp32_s3_box3_touch_is_initialized());
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(lvml_touch_enabled_obj, lvml_touch_enabled);
+
 static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_lvml) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&lvml_init_obj) },
@@ -460,6 +467,7 @@ static const mp_rom_map_elem_t lvml_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_show_image), MP_ROM_PTR(&lvml_show_image_obj) },
     { MP_ROM_QSTR(MP_QSTR_debug), MP_ROM_PTR(&lvml_debug_obj) },
     { MP_ROM_QSTR(MP_QSTR_load_xml), MP_ROM_PTR(&lvml_load_xml_obj) },
+    { MP_ROM_QSTR(MP_QSTR_touch_enabled), MP_ROM_PTR(&lvml_touch_enabled_obj) },
 };
 static MP_DEFINE_CONST_DICT(lvml_module_globals, lvml_module_globals_table);
 
